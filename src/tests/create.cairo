@@ -23,9 +23,9 @@ use dojo_core::auth::systems::{Route, RouteTrait, GrantAuthRole};
 
 use explore::components::game::{Game, GameComponent};
 use explore::systems::{create::Create, move::Move};
-use explore::constants::{DIFFICULTY, MAX_X,MAX_Y, START_X, START_Y, ALIVE};
+use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y, ALIVE};
 
-const NAME : felt252 = 'NAME';
+const NAME: felt252 = 'NAME';
 
 fn spawn_game() -> (ContractAddress, felt252) {
     // [Setup] Components
@@ -70,8 +70,7 @@ fn test_spawn_game() {
     let mut games = IWorldDispatcher {
         contract_address: world_address
     }.entity('Game'.into(), game_id.into(), 0, 0);
-    let game = serde::Serde::<Game>::deserialize(ref games)
-        .expect('deserialization failed');
+    let game = serde::Serde::<Game>::deserialize(ref games).expect('deserialization failed');
 
     assert(game.name == NAME, 'wrong name');
     assert(game.status == ALIVE, 'wrong status');
@@ -94,7 +93,7 @@ fn test_move_explorer() {
 
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
     spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(0);  // Move to left
+    spawn_location_calldata.append(0); // Move to left
 
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
@@ -103,6 +102,5 @@ fn test_move_explorer() {
     }.entity('Game'.into(), game_id.into(), 0, 0);
 
     // check game
-    let game = serde::Serde::<Game>::deserialize(ref games)
-        .expect('deserialization failed');
+    let game = serde::Serde::<Game>::deserialize(ref games).expect('deserialization failed');
 }

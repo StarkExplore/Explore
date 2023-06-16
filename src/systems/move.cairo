@@ -38,7 +38,7 @@ mod Move {
             max_x: game.max_x,
             max_y: game.max_y,
         };
-        
+
         commands::set_entity(game_sk, (updated, ));
         return ();
     }
