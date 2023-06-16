@@ -21,8 +21,8 @@ mod Create {
                     player: ctx.caller_account.into(),
                     name: name,
                     status: ALIVE,
-                    score: 0,
-                    seed: ctx.caller_system,
+                    score: 1,
+                    seed: ctx.caller_system, // TODO: use tx hash instead
                     commited_block_timestamp: starknet::get_block_timestamp(),
                     x: START_X,
                     y: START_Y,

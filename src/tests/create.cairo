@@ -74,7 +74,7 @@ fn test_spawn_game() {
 
     assert(game.name == NAME, 'wrong name');
     assert(game.status == ALIVE, 'wrong status');
-    assert(game.score == 0, 'wrong score');
+    assert(game.score == 1, 'wrong score');
     // assert(game.seed == 0, 'wrong seed');   
     // assert(game.commited_block_timestamp == 0, 'wrong commited_block_timestamp');
     assert(game.x == START_X, 'wrong x');
