@@ -13,33 +13,37 @@ mod Move {
     use super::Direction;
 
     use explore::components::game::Game;
+    use explore::constants::SECURITY_OFFSET;
 
     fn execute(ctx: Context, game_id: u32, direction: Direction) {
         // [Query] Game entity
         let game_sk: Query = game_id.into();
         let game = commands::<Game>::entity(game_sk);
 
-        // [Check] Next block
+        // [Check] Not the same block
         let time = starknet::get_block_timestamp();
-        assert(time > game.commited_block_timestamp, 'Cannot move twice in a block');
+        assert(time >= game.commited_block_timestamp + SECURITY_OFFSET, 'Cannot do twice actions');
         let (x, y) = next_position(game, direction);
 
-        // [Compute] Updated explorer
-        let updated = Game {
-            player: game.player,
-            name: game.name,
-            status: game.status,
-            score: game.score,
-            seed: game.seed,
-            commited_block_timestamp: time,
-            x: x,
-            y: y,
-            difficulty: game.difficulty,
-            max_x: game.max_x,
-            max_y: game.max_y,
-        };
-
-        commands::set_entity(game_sk, (updated, ));
+        // [Compute] Updated game entity
+        commands::set_entity(
+            game_sk,
+            (
+                Game {
+                    player: game.player,
+                    name: game.name,
+                    status: game.status,
+                    score: game.score,
+                    seed: game.seed,
+                    commited_block_timestamp: time,
+                    x: x,
+                    y: y,
+                    difficulty: game.difficulty,
+                    max_x: game.max_x,
+                    max_y: game.max_y,
+                },
+            )
+        );
         return ();
     }
 

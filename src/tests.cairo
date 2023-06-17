@@ -1,2 +1,4 @@
+mod setup;
 mod create;
-mod tile;
+mod move;
+mod reveal;

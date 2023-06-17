@@ -8,3 +8,4 @@ const START_Y: u16 = 5;
 const ALIVE: u8 = 1;
 const DEAD: u8 = 0;
 
+const SECURITY_OFFSET: u64 = 0;  // 0 for test purpose, otherwise > 1
