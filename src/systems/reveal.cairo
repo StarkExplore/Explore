@@ -6,95 +6,146 @@ mod Reveal {
     use poseidon::poseidon_hash_span;
 
     use explore::components::game::Game;
-    use explore::components::tile::Tile;
-    use explore::constants::{DIFFICULTY, SECURITY_OFFSET};
+    use explore::components::tile::{Tile, TileTrait};
+    use explore::constants::{DIFFICULTY, SECURITY_OFFSET, OFF};
 
     fn execute(ctx: Context, game_id: u32) {
         // [Query] Game entity
         let game_sk: Query = game_id.into();
         let game = commands::<Game>::entity(game_sk);
 
-        // [Check] Not the same block
+        // [Check] Two moves in a single block security
         let time = starknet::get_block_timestamp();
-        assert(time >= game.commited_block_timestamp + SECURITY_OFFSET, 'Cannot do twice actions');
+        assert(
+            time >= game.commited_block_timestamp + SECURITY_OFFSET, 'Cannot perform two actions'
+        );
 
-        // [Compute] Create a tile
-        let tile_id =  (game_id, game.x, game.y);
-        let dangers = compute_dangers(game, game.x, game.y);
+        // [Check] Current Tile has not been explored yet
+        let mut tile_sk: Query = (game_id, game.x, game.y).into();
+        let tile = commands::<Tile>::try_entity(tile_sk);
+        match tile {
+            Option::Some(tile) => {
+                assert(!tile.explored, 'Current tile must be unrevealed');
+            },
+            Option::None(_) => { return (); },
+        }
 
-        // [Example] Set the storage partition to the owner, so the storage key would be like (owner_id, (army_id)). 
-        // that way you can query for all armies an owner owns like storage::<Army>::entities(owner_id)
+        // [Check] Position is mine turn off the game, continue otherwise
+        let danger = TileTrait::get_danger(game.seed, game.difficulty, game.x, game.y);
+        if danger == 1_u8 {
+            // [Compute] Updated game entity
+            commands::set_entity(
+                game_sk,
+                (
+                    Game {
+                        player: game.player,
+                        name: game.name,
+                        status: OFF,
+                        score: game.score,
+                        seed: game.seed,
+                        commited_block_timestamp: game.commited_block_timestamp,
+                        x: game.x,
+                        y: game.y,
+                        difficulty: game.difficulty,
+                        max_x: game.max_x,
+                        max_y: game.max_y,
+                    },
+                )
+            );
+        }
 
         // [Command] Create the tile entity
+        let tile_id = (game_id, game.x, game.y);
+        let clue = TileTrait::get_clue(game.seed, game.difficulty, game.max_x, game.max_y, game.x, game.y);
         commands::set_entity(
-            tile_id.into(),
+            tile_id.into(), (Tile { x: game.x, y: game.y, explored: true, clue: clue }, )
+        );
+
+        // [Command] Update the game entity to increse score
+        commands::set_entity(
+            game_sk,
             (
-                Tile {
+                Game {
+                    player: game.player,
+                    name: game.name,
+                    status: game.status,
+                    score: game.score + 1_u64,
+                    seed: game.seed,
+                    commited_block_timestamp: game.commited_block_timestamp,
                     x: game.x,
                     y: game.y,
-                    explored: 1,
-                    dangers: dangers
+                    difficulty: game.difficulty,
+                    max_x: game.max_x,
+                    max_y: game.max_y,
                 },
             )
         );
     }
+}
 
-    fn compute_dangers(game: Game, x: u16, y: u16) -> u8 {
-        // [Compute] Dangerousness of each neighbor based on their position
-        let mut dangers: u8 = 0;
+mod Test {
+    use traits::Into;
+    use array::{ArrayTrait, SpanTrait};
+    use option::OptionTrait;
+    use dojo_core::storage::query::Query;
+    use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
+    use explore::components::{game::Game, tile::Tile};
+    use explore::systems::{create::Create};
+    use explore::tests::setup::spawn_game;
 
-        let mut idx: u8 = 0;
-        let max_x = game.max_x - 1;
-        let max_y = game.max_y - 1;
+    #[test]
+    #[should_panic]
+    #[available_gas(100000000)]
+    fn test_reveal_position() {
+        // [Setup] World
+        let (world_address, game_id) = spawn_game();
+        let world = IWorldDispatcher { contract_address: world_address };
 
-        // [Compute] Left neighbors
-        if x > 0 {
-            dangers += compute_danger(game.seed, x - 1, y);
-            if y > 0 {
-                dangers += compute_danger(game.seed, x - 1, y - 1);
-            }
-            if y < max_y {
-                dangers += compute_danger(game.seed, x - 1, y + 1);
-            }
-        }
-        
-        // [Compute] Right neighbors
-        if x < max_x {
-            dangers += compute_danger(game.seed, x + 1, y);
-            if y > 0 {
-                dangers += compute_danger(game.seed, x + 1, y - 1);
-            }
-            if y < max_y {
-                dangers += compute_danger(game.seed, x + 1, y + 1);
-            }
-        }
+        // [Execute] Move to left
+        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
+        spawn_location_calldata.append(game_id);
+        spawn_location_calldata.append(0);
+        let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
-        // [Compute] Top and bottom neighbors
-        if y > 0 {
-            dangers += compute_danger(game.seed, x, y - 1);
-        }
-        if y < max_y {
-            dangers += compute_danger(game.seed, x, y + 1);
-        }
+        // [Execute] Reveal
+        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
+        spawn_location_calldata.append(game_id);
+        let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
 
-        dangers
+        // [Check] Game state
+        let mut games = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Game'.into(), game_id.into(), 0, 0);
+        let game = serde::Serde::<Game>::deserialize(ref games).expect('deserialization failed');
+        assert(game.score == 2_u64, 'wrong score');
+
+        // [Check] Tile state
+        let tile_id: Query = (game_id, game.x, game.y).into();
+        let mut tiles = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Tile'.into(), tile_id.into(), 0, 0);
+        let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
+
+        // [Check] Reveal has been operated
+        assert(tile.x == game.x, 'wrong x');
+        assert(tile.y == game.y, 'wrong y');
+        assert(tile.explored == true, 'tile not explored');
+        assert(tile.clue == 1_u8, 'wrong clue');
     }
 
-    fn compute_danger(seed: felt252, x: u16, y: u16) -> u8 {
-        // [Compute] Hash the position
-        let mut serialized = ArrayTrait::new();
-        serialized.append(seed);
-        serialized.append(x.into());
-        serialized.append(y.into());
+    // @dev: This test is not working because of the tile is already explored
+    // @notice: #[should_panic(expected: ('Current tile must be unrevealed', ))] does not work
+    #[test]
+    #[should_panic]
+    #[available_gas(100000000)]
+    fn test_reveal_revert_revealed() {
+        // [Setup] World
+        let (world_address, game_id) = spawn_game();
+        let world = IWorldDispatcher { contract_address: world_address };
 
-        let hash: u256 = poseidon_hash_span(serialized.span()).into();
-        
-        // [Compute] Difficulty * 10% chance of being a danger
-        let probability = DIFFICULTY * 10_u8;
-        let result: u128 = hash.low % 100;
-        if result <= probability.into() {
-            return 1_u8;
-        }
-        0_u8
+        // [Execute] Reveal
+        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
+        spawn_location_calldata.append(game_id);
+        let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
     }
 }

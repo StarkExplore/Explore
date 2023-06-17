@@ -9,7 +9,6 @@ use dojo_core::auth::systems::{Route, RouteTrait, GrantAuthRole};
 use explore::components::tile::TileComponent;
 use explore::components::game::GameComponent;
 use explore::systems::{create::Create, move::Move, reveal::Reveal};
-use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y, ALIVE};
 
 const NAME: felt252 = 'NAME';
 
@@ -28,8 +27,11 @@ fn spawn_game() -> (ContractAddress, felt252) {
     // [Setup] Routes
     let mut routes = array::ArrayTrait::new();
     routes.append(RouteTrait::new('Create'.into(), 'GameWriter'.into(), 'Game'.into()));
+    routes.append(RouteTrait::new('Create'.into(), 'TileWriter'.into(), 'Tile'.into()));
+    routes.append(RouteTrait::new('Move'.into(), 'GameReader'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Move'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'GameReader'.into(), 'Game'.into()));
+    routes.append(RouteTrait::new('Reveal'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'TileWriter'.into(), 'Tile'.into()));
 
     let world = spawn_test_world(components, systems, routes);
