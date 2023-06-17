@@ -14,10 +14,10 @@ fn test_play() {
     let (world_address, game_id) = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
 
-    // [Execute] Move to left
+    // [Execute] Move up
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
     spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(0);
+    spawn_location_calldata.append(2);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
     // [Execute] Reveal
@@ -25,10 +25,30 @@ fn test_play() {
     spawn_location_calldata.append(game_id);
     let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
 
-    // [Execute] Move to up
+    // [Execute] Move down left
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
     spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(2);
+    spawn_location_calldata.append(7);
+    let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+
+    // [Execute] Reveal
+    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
+    spawn_location_calldata.append(game_id);
+    let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
+}
+
+#[test]
+#[should_panic]
+#[available_gas(100000000000)]
+fn test_play_revert_game_over() {
+    // [Setup] World
+    let (world_address, game_id) = spawn_game();
+    let world = IWorldDispatcher { contract_address: world_address };
+
+    // [Execute] Move left
+    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
+    spawn_location_calldata.append(game_id);
+    spawn_location_calldata.append(0);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
     // [Execute] Reveal

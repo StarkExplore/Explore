@@ -3,7 +3,7 @@ use array::ArrayTrait;
 // @notice: This is the main game component
 // @param player: Player address
 // @param name: Player name
-// @param status: 0: dead, 1: alive
+// @param status: false: dead, true: alive
 // @param score: Number of tiles explored
 // @param seed: Initial seed used to define bomb positions
 // @param commited_block_timestamp: Security to avoid a player to move twice in a block
@@ -16,7 +16,7 @@ use array::ArrayTrait;
 struct Game {
     player: felt252,
     name: felt252,
-    status: u8,
+    status: bool,
     score: u64,
     seed: felt252,
     commited_block_timestamp: u64,

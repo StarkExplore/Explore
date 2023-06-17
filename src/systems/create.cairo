@@ -6,7 +6,7 @@ mod Create {
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
     use explore::components::tile::{Tile, TileTrait};
-    use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y, ON};
+    use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y};
 
     fn execute(ctx: Context, name: felt252) -> felt252 {
         let time = starknet::get_block_timestamp();
@@ -20,7 +20,7 @@ mod Create {
                 Game {
                     player: ctx.caller_account.into(),
                     name: name,
-                    status: ON,
+                    status: true,
                     score: 1_u64,
                     seed: seed,
                     commited_block_timestamp: starknet::get_block_timestamp(),
@@ -53,7 +53,7 @@ mod Test {
     use explore::components::{game::Game, tile::Tile};
     use explore::systems::{create::Create};
     use explore::tests::setup::{spawn_game, NAME};
-    use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y, ON};
+    use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y};
 
     #[test]
     #[available_gas(100000000)]
@@ -74,7 +74,7 @@ mod Test {
         let game = serde::Serde::<Game>::deserialize(ref games).expect('deserialization failed');
 
         assert(game.name == NAME, 'wrong name');
-        assert(game.status == ON, 'wrong status');
+        assert(game.status, 'wrong status');
         assert(game.score == 1_u64, 'wrong score');
         assert(game.x == START_X, 'wrong x');
         assert(game.y == START_Y, 'wrong y');

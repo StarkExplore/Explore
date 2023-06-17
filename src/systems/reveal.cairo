@@ -7,12 +7,12 @@ mod Reveal {
 
     use explore::components::game::Game;
     use explore::components::tile::{Tile, TileTrait};
-    use explore::constants::{DIFFICULTY, SECURITY_OFFSET, OFF};
+    use explore::constants::{DIFFICULTY, SECURITY_OFFSET};
 
     fn execute(ctx: Context, game_id: u32) {
-        // [Query] Game entity
-        let game_sk: Query = game_id.into();
-        let game = commands::<Game>::entity(game_sk);
+        // [Check] Game is not over
+        let game = commands::<Game>::entity(game_id.into());
+        assert(game.status, 'Game is finished');
 
         // [Check] Two moves in a single block security
         let time = starknet::get_block_timestamp();
@@ -38,12 +38,12 @@ mod Reveal {
         if danger == 1_u8 {
             // [Compute] Updated game entity
             commands::set_entity(
-                game_sk,
+                game_id.into(),
                 (
                     Game {
                         player: game.player,
                         name: game.name,
-                        status: OFF,
+                        status: false,
                         score: game.score,
                         seed: game.seed,
                         commited_block_timestamp: game.commited_block_timestamp,
@@ -55,6 +55,7 @@ mod Reveal {
                     },
                 )
             );
+            return ();
         }
 
         // [Command] Create the tile entity
@@ -67,7 +68,6 @@ mod Reveal {
         );
 
         // [Command] Update the game entity to increse score
-        let score = game.score + 1_u64;
         commands::set_entity(
             game_id.into(),
             (
@@ -75,7 +75,7 @@ mod Reveal {
                     player: game.player,
                     name: game.name,
                     status: game.status,
-                    score: score,
+                    score: game.score + 1_u64,
                     seed: game.seed,
                     commited_block_timestamp: game.commited_block_timestamp,
                     x: game.x,
@@ -106,10 +106,10 @@ mod Test {
         let (world_address, game_id) = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };
 
-        // [Execute] Move to left
+        // [Execute] Move up
         let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
         spawn_location_calldata.append(game_id);
-        spawn_location_calldata.append(0);
+        spawn_location_calldata.append(2);
         let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
         // [Execute] Reveal
@@ -136,7 +136,7 @@ mod Test {
         assert(tile.x == game.x, 'wrong x');
         assert(tile.y == game.y, 'wrong y');
         assert(tile.explored == true, 'tile not explored');
-        assert(tile.clue == 1_u8, 'wrong clue');
+        assert(tile.clue == 2_u8, 'wrong clue');
     }
 
     // @dev: This test is not working because of the tile is already explored

@@ -18,33 +18,26 @@ mod Move {
 
     use explore::components::game::Game;
     use explore::components::tile::Tile;
-    use explore::constants::{SECURITY_OFFSET, ON};
+    use explore::constants::{SECURITY_OFFSET};
 
     fn execute(ctx: Context, game_id: u32, direction: Direction) {
-        // [Query] Game entity
-        let game_sk: Query = game_id.into();
-        let game = commands::<Game>::entity(game_sk);
+        // [Check] Game is not over
+        let game = commands::<Game>::entity(game_id.into());
+        assert(game.status, 'Game is finished');
 
         // [Check] Current Tile has been revealed
-        let mut tile_sk: Query = (game_id, game.x, game.y).into();
-        let tile = commands::<Tile>::try_entity(tile_sk);
-        match tile {
-            Option::Some(tile) => {
-                assert(tile.explored, 'Current tile must be revealed');
-            },
-            Option::None(_) => {
-                assert(1 == 0, 'Current tile must be revealed');
-            },
-        }
-
-        // [Check] Game is not finished
-        assert(game.status == ON, 'Game is finished');
+        let tile = commands::<Tile>::try_entity((game_id, game.x, game.y).into());
+        let revealed = match tile {
+            Option::Some(tile) => { tile.explored },
+            Option::None(_) => { false },
+        };
+        assert(revealed, 'Current tile must be revealed');
 
         // [Compute] Updated game entity
         let (x, y) = next_position(game, direction);
         let time = starknet::get_block_timestamp();
         commands::set_entity(
-            game_sk,
+            game_id.into(),
             (
                 Game {
                     player: game.player,

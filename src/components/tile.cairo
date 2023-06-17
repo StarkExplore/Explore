@@ -28,33 +28,33 @@ impl TileImpl of TileTrait {
         let mut clue: u8 = 0;
 
         // [Compute] Left neighbors
-        if x > 0 {
-            clue += compute_danger(seed, diff, x - 1, y);
-            if y > 0 {
-                clue += compute_danger(seed, diff, x - 1, y - 1);
+        if x > 0_u16 {
+            clue += compute_danger(seed, diff, x - 1_u16, y);
+            if y > 0_u16 {
+                clue += compute_danger(seed, diff, x - 1_u16, y - 1_u16);
             }
-            if y + 1 < max_y {
-                clue += compute_danger(seed, diff, x - 1, y + 1);
+            if y + 1_u16 < max_y {
+                clue += compute_danger(seed, diff, x - 1_u16, y + 1_u16);
             }
         }
 
         // [Compute] Right neighbors
-        if x + 1 < max_x {
-            clue += compute_danger(seed, diff, x + 1, y);
-            if y > 0 {
-                clue += compute_danger(seed, diff, x + 1, y - 1);
+        if x + 1_u16 < max_x {
+            clue += compute_danger(seed, diff, x + 1_u16, y);
+            if y > 0_u16 {
+                clue += compute_danger(seed, diff, x + 1_u16, y - 1_u16);
             }
-            if y + 1 < max_y {
-                clue += compute_danger(seed, diff, x + 1, y + 1);
+            if y + 1_u16 < max_y {
+                clue += compute_danger(seed, diff, x + 1_u16, y + 1_u16);
             }
         }
 
         // [Compute] Top and bottom neighbors
-        if y > 0 {
-            clue += compute_danger(seed, diff, x, y - 1);
+        if y > 0_u16 {
+            clue += compute_danger(seed, diff, x, y - 1_u16);
         }
-        if y + 1 < max_y {
-            clue += compute_danger(seed, diff, x, y + 1);
+        if y + 1_u16 < max_y {
+            clue += compute_danger(seed, diff, x, y + 1_u16);
         }
 
         clue
@@ -77,7 +77,7 @@ fn compute_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8 {
     // [Compute] Difficulty * 10% chance of being a danger
     let probability = diff * 10_u8;
     let result: u128 = hash.low % 100;
-    if result <= probability.into() {
+    if result < probability.into() {
         return 1_u8;
     }
     0_u8
