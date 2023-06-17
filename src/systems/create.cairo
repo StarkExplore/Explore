@@ -36,7 +36,8 @@ mod Create {
         // [Compute] Create a tile
         let clue = TileTrait::get_clue(seed, DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y);
         commands::set_entity(
-            (game_id, START_X, START_Y).into(), (Tile { x: START_X, y: START_Y, explored: true, clue: clue }, )
+            (game_id, START_X, START_Y).into(),
+            (Tile { x: START_X, y: START_Y, explored: true, clue: clue }, )
         );
 
         game_id.into()

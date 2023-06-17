@@ -24,8 +24,12 @@ mod Reveal {
         let mut tile_sk: Query = (game_id, game.x, game.y).into();
         let tile = commands::<Tile>::try_entity(tile_sk);
         let exists = match tile {
-            Option::Some(tile) => { !tile.explored },
-            Option::None(_) => { true },
+            Option::Some(tile) => {
+                !tile.explored
+            },
+            Option::None(_) => {
+                true
+            },
         };
         assert(exists, 'Current tile must be unrevealed');
 
@@ -54,7 +58,9 @@ mod Reveal {
         }
 
         // [Command] Create the tile entity
-        let clue = TileTrait::get_clue(game.seed, game.difficulty, game.max_x, game.max_y, game.x, game.y);
+        let clue = TileTrait::get_clue(
+            game.seed, game.difficulty, game.max_x, game.max_y, game.x, game.y
+        );
         commands::set_entity(
             (game_id, game.x, game.y).into(),
             (Tile { x: game.x, y: game.y, explored: true, clue: clue }, ),
@@ -115,14 +121,16 @@ mod Test {
         let mut games = IWorldDispatcher {
             contract_address: world_address
         }.entity('Game'.into(), game_id.into(), 0, 0);
-        let game = serde::Serde::<Game>::deserialize(ref games).expect('game deserialization failed');
+        let game = serde::Serde::<Game>::deserialize(ref games)
+            .expect('game deserialization failed');
         assert(game.score == 2_u64, 'wrong score');
 
         // [Check] Tile state
         let mut tiles = IWorldDispatcher {
             contract_address: world_address
         }.entity('Tile'.into(), (game_id, game.x, game.y).into(), 0, 0);
-        let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('tile deserialization failed');
+        let tile = serde::Serde::<Tile>::deserialize(ref tiles)
+            .expect('tile deserialization failed');
 
         // [Check] Reveal has been operated
         assert(tile.x == game.x, 'wrong x');

@@ -18,18 +18,12 @@ struct Tile {
 }
 
 trait TileTrait {
-    fn get_clue(
-        seed: felt252, diff: u8, max_x: u16, max_y: u16, x: u16, y: u16
-    ) -> u8;
-    fn get_danger(
-        seed: felt252, diff: u8, x: u16, y: u16
-    ) -> u8;
+    fn get_clue(seed: felt252, diff: u8, max_x: u16, max_y: u16, x: u16, y: u16) -> u8;
+    fn get_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8;
 }
 
 impl TileImpl of TileTrait {
-    fn get_clue(
-        seed: felt252, diff: u8, max_x: u16, max_y: u16, x: u16, y: u16
-    ) -> u8 {
+    fn get_clue(seed: felt252, diff: u8, max_x: u16, max_y: u16, x: u16, y: u16) -> u8 {
         // [Compute] Dangerousness of each neighbor based on their position
         let mut clue: u8 = 0;
 
@@ -66,9 +60,7 @@ impl TileImpl of TileTrait {
         clue
     }
 
-    fn get_danger(
-        seed: felt252, diff: u8, x: u16, y: u16
-    ) -> u8 {
+    fn get_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8 {
         compute_danger(seed, diff, x, y)
     }
 }
