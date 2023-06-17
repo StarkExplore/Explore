@@ -21,7 +21,7 @@ mod Reveal {
         );
 
         // [Check] Current Tile has not been explored yet
-        let mut tile_sk: Query = (game_id, game.x, game.y).into();
+        let mut tile_sk: Query = (game_id, (game.x), (game.y)).into();
         let tile = commands::<Tile>::try_entity(tile_sk);
         let exists = match tile {
             Option::Some(tile) => {
@@ -63,7 +63,7 @@ mod Reveal {
             game.seed, game.difficulty, game.max_x, game.max_y, game.x, game.y
         );
         commands::set_entity(
-            (game_id, game.x, game.y).into(),
+            (game_id, (game.x), (game.y)).into(),
             (Tile { x: game.x, y: game.y, explored: true, clue: clue }, ),
         );
 

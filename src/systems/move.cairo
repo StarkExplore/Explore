@@ -26,7 +26,7 @@ mod Move {
         assert(game.status, 'Game is finished');
 
         // [Check] Current Tile has been revealed
-        let tile = commands::<Tile>::try_entity((game_id, game.x, game.y).into());
+        let tile = commands::<Tile>::try_entity((game_id, (game.x), (game.y)).into());
         let revealed = match tile {
             Option::Some(tile) => {
                 tile.explored

@@ -3,6 +3,8 @@ use serde::Serde;
 use traits::Into;
 use poseidon::poseidon_hash_span;
 
+use explore::constants::BASE_SEED;
+
 // @notice: This is the tile component used to know what is explored
 // and what is not. It also contains the number of dangers around.
 // @param explored: 0: unexplored, 1: explored
@@ -68,6 +70,7 @@ impl TileImpl of TileTrait {
 fn compute_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8 {
     // [Compute] Hash the position
     let mut serialized = ArrayTrait::new();
+    serialized.append(BASE_SEED);
     serialized.append(seed);
     serialized.append(x.into());
     serialized.append(y.into());

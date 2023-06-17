@@ -45,10 +45,10 @@ fn test_play_revert_game_over() {
     let (world_address, game_id) = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
 
-    // [Execute] Move left
+    // [Execute] Move right
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
     spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(0);
+    spawn_location_calldata.append(4);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
     // [Execute] Reveal
@@ -56,9 +56,9 @@ fn test_play_revert_game_over() {
     spawn_location_calldata.append(game_id);
     let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
 
-    // [Execute] Move to right
+    // [Execute] Move to left
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
     spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(4);
+    spawn_location_calldata.append(0);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 }

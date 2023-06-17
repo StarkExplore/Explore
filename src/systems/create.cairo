@@ -36,7 +36,7 @@ mod Create {
         // [Compute] Create a tile
         let clue = TileTrait::get_clue(seed, DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y);
         commands::set_entity(
-            (game_id, START_X, START_Y).into(),
+            (game_id, (START_X), (START_Y)).into(),
             (Tile { x: START_X, y: START_Y, explored: true, clue: clue }, )
         );
 
@@ -92,6 +92,6 @@ mod Test {
         assert(tile.x == START_X, 'wrong x');
         assert(tile.y == START_Y, 'wrong y');
         assert(tile.explored == true, 'wrong explored');
-        assert(tile.clue == 1_u8, 'wrong clue');
+        assert(tile.clue == 2_u8, 'wrong clue');
     }
 }
