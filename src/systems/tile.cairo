@@ -7,11 +7,8 @@ mod Tile {
     use explore::constants::{DIFFICULTY};
 
     fn execute(ctx: Context, game_id: u32, x: u16, y: u16) -> felt252 {
-        // [Query] Game entity
-        let game_sk: Query = game_id.into();
-        // let game = commands::<Game>::entity(game_sk);
 
-        let tileId = commands::uuid();
+        let tileId =  (game_id, x, y);
 
         // [Compute] Create a tile
         let tile = Tile {
