@@ -30,8 +30,10 @@ fn spawn_game() -> (ContractAddress, felt252) {
     routes.append(RouteTrait::new('Create'.into(), 'TileWriter'.into(), 'Tile'.into()));
     routes.append(RouteTrait::new('Move'.into(), 'GameReader'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Move'.into(), 'GameWriter'.into(), 'Game'.into()));
+    routes.append(RouteTrait::new('Move'.into(), 'TileReader'.into(), 'Tile'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'GameReader'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'GameWriter'.into(), 'Game'.into()));
+    routes.append(RouteTrait::new('Reveal'.into(), 'TileReader'.into(), 'Tile'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'TileWriter'.into(), 'Tile'.into()));
 
     let world = spawn_test_world(components, systems, routes);

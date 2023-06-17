@@ -150,7 +150,7 @@ mod Test {
     #[test]
     #[should_panic]
     #[available_gas(100000000)]
-    fn test_move_twice() {
+    fn test_move_twice_revert_unrevealed() {
         // [Setup] World
         let (world_address, game_id) = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };

@@ -23,12 +23,11 @@ mod Reveal {
         // [Check] Current Tile has not been explored yet
         let mut tile_sk: Query = (game_id, game.x, game.y).into();
         let tile = commands::<Tile>::try_entity(tile_sk);
-        match tile {
-            Option::Some(tile) => {
-                assert(!tile.explored, 'Current tile must be unrevealed');
-            },
-            Option::None(_) => { return (); },
-        }
+        let exists = match tile {
+            Option::Some(tile) => { !tile.explored },
+            Option::None(_) => { true },
+        };
+        assert(exists, 'Current tile must be unrevealed');
 
         // [Check] Position is mine turn off the game, continue otherwise
         let danger = TileTrait::get_danger(game.seed, game.difficulty, game.x, game.y);
@@ -55,21 +54,22 @@ mod Reveal {
         }
 
         // [Command] Create the tile entity
-        let tile_id = (game_id, game.x, game.y);
         let clue = TileTrait::get_clue(game.seed, game.difficulty, game.max_x, game.max_y, game.x, game.y);
         commands::set_entity(
-            tile_id.into(), (Tile { x: game.x, y: game.y, explored: true, clue: clue }, )
+            (game_id, game.x, game.y).into(),
+            (Tile { x: game.x, y: game.y, explored: true, clue: clue }, ),
         );
 
         // [Command] Update the game entity to increse score
+        let score = game.score + 1_u64;
         commands::set_entity(
-            game_sk,
+            game_id.into(),
             (
                 Game {
                     player: game.player,
                     name: game.name,
                     status: game.status,
-                    score: game.score + 1_u64,
+                    score: score,
                     seed: game.seed,
                     commited_block_timestamp: game.commited_block_timestamp,
                     x: game.x,
@@ -94,7 +94,6 @@ mod Test {
     use explore::tests::setup::spawn_game;
 
     #[test]
-    #[should_panic]
     #[available_gas(100000000)]
     fn test_reveal_position() {
         // [Setup] World
@@ -116,15 +115,14 @@ mod Test {
         let mut games = IWorldDispatcher {
             contract_address: world_address
         }.entity('Game'.into(), game_id.into(), 0, 0);
-        let game = serde::Serde::<Game>::deserialize(ref games).expect('deserialization failed');
+        let game = serde::Serde::<Game>::deserialize(ref games).expect('game deserialization failed');
         assert(game.score == 2_u64, 'wrong score');
 
         // [Check] Tile state
-        let tile_id: Query = (game_id, game.x, game.y).into();
         let mut tiles = IWorldDispatcher {
             contract_address: world_address
-        }.entity('Tile'.into(), tile_id.into(), 0, 0);
-        let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
+        }.entity('Tile'.into(), (game_id, game.x, game.y).into(), 0, 0);
+        let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('tile deserialization failed');
 
         // [Check] Reveal has been operated
         assert(tile.x == game.x, 'wrong x');
