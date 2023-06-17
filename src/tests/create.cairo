@@ -1,31 +1,15 @@
 use traits::Into;
-use core::result::ResultTrait;
 use array::{ArrayTrait, SpanTrait};
 use option::OptionTrait;
-use traits::TryInto;
-use box::BoxTrait;
-use clone::Clone;
-use debug::PrintTrait;
-use poseidon::poseidon_hash_span;
-use serde::Serde;
-use starknet::{ContractAddress, syscalls::deploy_syscall};
-use starknet::class_hash::{ClassHash, Felt252TryIntoClassHash};
-use dojo_core::storage::query::{IntoPartitioned, IntoPartitionedQuery};
-use dojo_core::interfaces::{
-    IWorldDispatcher, IWorldDispatcherTrait, IComponentLibraryDispatcher, IComponentDispatcherTrait,
-    ISystemLibraryDispatcher, ISystemDispatcherTrait
-};
 
-use dojo_core::executor::Executor;
-use dojo_core::world::World;
-use dojo_core::test_utils::spawn_test_world;
-use dojo_core::auth::systems::{Route, RouteTrait, GrantAuthRole};
+use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
 
-use explore::components::game::{Game, GameComponent};
-use explore::systems::{create::Create, move::Move};
-use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y, ALIVE};
+use explore::components::{game::Game, tile::Tile};
+use explore::systems::{create::Create};
 
 use explore::tests::setup::{spawn_game, NAME};
+use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y, ALIVE};
+
 
 #[test]
 #[available_gas(100000000)]
