@@ -134,14 +134,14 @@ mod Test {
         let caller = starknet::get_caller_address();
 
         // [Execute] Move up and commit safe
-        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-        spawn_location_calldata.append(0);
-        spawn_location_calldata.append(2);
-        let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(0);
+        calldata.append(2);
+        let mut res = world.execute('Move'.into(), calldata.span());
 
         // [Execute] Reveal
-        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-        let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        let mut res = world.execute('Reveal'.into(), calldata.span());
 
         // [Check] Game state
         let mut games = IWorldDispatcher {
@@ -161,14 +161,14 @@ mod Test {
         let caller = starknet::get_caller_address();
 
         // [Execute] Move up and commit unsafe
-        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-        spawn_location_calldata.append(1);
-        spawn_location_calldata.append(2);
-        let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(1);
+        calldata.append(2);
+        let mut res = world.execute('Move'.into(), calldata.span());
 
         // [Execute] Reveal
-        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-        let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        let mut res = world.execute('Reveal'.into(), calldata.span());
 
         // [Check] Game state
         let mut games = IWorldDispatcher {
@@ -203,7 +203,7 @@ mod Test {
         let world = IWorldDispatcher { contract_address: world_address };
 
         // [Execute] Reveal
-        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-        let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        let mut res = world.execute('Reveal'.into(), calldata.span());
     }
 }
