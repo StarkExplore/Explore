@@ -20,54 +20,54 @@ struct Tile {
 }
 
 trait TileTrait {
-    fn get_clue(seed: felt252, diff: u8, max_x: u16, max_y: u16, x: u16, y: u16) -> u8;
-    fn get_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8;
+    fn get_clue(seed: felt252, level: u8, max_x: u16, max_y: u16, x: u16, y: u16) -> u8;
+    fn get_danger(seed: felt252, level: u8, x: u16, y: u16) -> u8;
 }
 
 impl TileImpl of TileTrait {
-    fn get_clue(seed: felt252, diff: u8, max_x: u16, max_y: u16, x: u16, y: u16) -> u8 {
+    fn get_clue(seed: felt252, level: u8, max_x: u16, max_y: u16, x: u16, y: u16) -> u8 {
         // [Compute] Dangerousness of each neighbor based on their position
         let mut clue: u8 = 0;
 
         // [Compute] Left neighbors
         if x > 0_u16 {
-            clue += compute_danger(seed, diff, x - 1_u16, y);
+            clue += compute_danger(seed, level, x - 1_u16, y);
             if y > 0_u16 {
-                clue += compute_danger(seed, diff, x - 1_u16, y - 1_u16);
+                clue += compute_danger(seed, level, x - 1_u16, y - 1_u16);
             }
             if y + 1_u16 < max_y {
-                clue += compute_danger(seed, diff, x - 1_u16, y + 1_u16);
+                clue += compute_danger(seed, level, x - 1_u16, y + 1_u16);
             }
         }
 
         // [Compute] Right neighbors
         if x + 1_u16 < max_x {
-            clue += compute_danger(seed, diff, x + 1_u16, y);
+            clue += compute_danger(seed, level, x + 1_u16, y);
             if y > 0_u16 {
-                clue += compute_danger(seed, diff, x + 1_u16, y - 1_u16);
+                clue += compute_danger(seed, level, x + 1_u16, y - 1_u16);
             }
             if y + 1_u16 < max_y {
-                clue += compute_danger(seed, diff, x + 1_u16, y + 1_u16);
+                clue += compute_danger(seed, level, x + 1_u16, y + 1_u16);
             }
         }
 
         // [Compute] Top and bottom neighbors
         if y > 0_u16 {
-            clue += compute_danger(seed, diff, x, y - 1_u16);
+            clue += compute_danger(seed, level, x, y - 1_u16);
         }
         if y + 1_u16 < max_y {
-            clue += compute_danger(seed, diff, x, y + 1_u16);
+            clue += compute_danger(seed, level, x, y + 1_u16);
         }
 
         clue
     }
 
-    fn get_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8 {
-        compute_danger(seed, diff, x, y)
+    fn get_danger(seed: felt252, level: u8, x: u16, y: u16) -> u8 {
+        compute_danger(seed, level, x, y)
     }
 }
 
-fn compute_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8 {
+fn compute_danger(seed: felt252, level: u8, x: u16, y: u16) -> u8 {
     // [Compute] Hash the position
     let mut serialized = ArrayTrait::new();
     serialized.append(BASE_SEED);
@@ -78,7 +78,7 @@ fn compute_danger(seed: felt252, diff: u8, x: u16, y: u16) -> u8 {
     let hash: u256 = poseidon_hash_span(serialized.span()).into();
 
     // [Compute] Difficulty * 10% chance of being a danger
-    let probability = diff * 10_u8;
+    let probability = 9_u8 + level;
     let result: u128 = hash.low % 100;
     if result < probability.into() {
         return 1_u8;

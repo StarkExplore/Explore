@@ -11,29 +11,27 @@ use explore::tests::setup::spawn_game;
 #[available_gas(100000000000)]
 fn test_play() {
     // [Setup] World
-    let (world_address, game_id) = spawn_game();
+    let world_address = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
 
-    // [Execute] Move up
+    // [Execute] Move left and commit safe
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(2);
+    spawn_location_calldata.append(0);
+    spawn_location_calldata.append(0);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
     // [Execute] Reveal
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
     let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
 
-    // [Execute] Move down left
+    // [Execute] Move up-right and commit unsafe
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(7);
+    spawn_location_calldata.append(1);
+    spawn_location_calldata.append(3);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
     // [Execute] Reveal
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
     let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
 }
 
@@ -42,23 +40,22 @@ fn test_play() {
 #[available_gas(100000000000)]
 fn test_play_revert_game_over() {
     // [Setup] World
-    let (world_address, game_id) = spawn_game();
+    let world_address = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
 
-    // [Execute] Move right
+    // [Execute] Move up and commit safe
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(4);
+    spawn_location_calldata.append(0);
+    spawn_location_calldata.append(2);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
     // [Execute] Reveal
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
     let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
 
-    // [Execute] Move to left
+    // [Execute] Move to left and commit safe
     let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
+    spawn_location_calldata.append(0);
     spawn_location_calldata.append(0);
     let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 }

@@ -10,23 +10,29 @@ enum Direction {
     DownLeft: (),
 }
 
+#[derive(Serde, Copy, Drop, PartialEq)]
+enum Action {
+    Safe: (),
+    Unsafe: (),
+}
+
 #[system]
 mod Move {
     use array::ArrayTrait;
     use traits::Into;
-    use super::Direction;
+    use super::{Direction, Action};
 
     use explore::components::game::Game;
     use explore::components::tile::Tile;
     use explore::constants::{SECURITY_OFFSET};
 
-    fn execute(ctx: Context, game_id: u32, direction: Direction) {
+    fn execute(ctx: Context, action: Action, direction: Direction) {
         // [Check] Game is not over
-        let game = commands::<Game>::entity(game_id.into());
+        let game = commands::<Game>::entity(ctx.caller_account.into());
         assert(game.status, 'Game is finished');
 
         // [Check] Current Tile has been revealed
-        let tile = commands::<Tile>::try_entity((game_id, (game.x), (game.y)).into());
+        let tile = commands::<Tile>::try_entity((ctx.caller_account, game.x, game.y).into());
         let revealed = match tile {
             Option::Some(tile) => {
                 tile.explored
@@ -38,13 +44,13 @@ mod Move {
         assert(revealed, 'Current tile must be revealed');
 
         // [Compute] Updated game entity
+        let commit = next_action(action);
         let (x, y) = next_position(game, direction);
         let time = starknet::get_block_timestamp();
         commands::set_entity(
-            game_id.into(),
+            ctx.caller_account.into(),
             (
                 Game {
-                    player: game.player,
                     name: game.name,
                     status: game.status,
                     score: game.score,
@@ -52,13 +58,25 @@ mod Move {
                     commited_block_timestamp: time,
                     x: x,
                     y: y,
-                    difficulty: game.difficulty,
+                    level: game.level,
                     max_x: game.max_x,
                     max_y: game.max_y,
+                    action: commit,
                 },
             )
         );
         return ();
+    }
+
+    fn next_action(action: Action) -> u8 {
+        match action {
+            Action::Safe(()) => {
+                0_u8
+            },
+            Action::Unsafe(()) => {
+                1_u8
+            },
+        }
     }
 
     fn next_position(game: Game, direction: Direction) -> (u16, u16) {
@@ -116,26 +134,27 @@ mod Test {
     #[available_gas(100000000)]
     fn test_move_left() {
         // [Setup] World
-        let (world_address, game_id) = spawn_game();
+        let world_address = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };
+        let caller = starknet::get_caller_address();
 
         // [Check] Game state
         let mut initials = IWorldDispatcher {
             contract_address: world_address
-        }.entity('Game'.into(), game_id.into(), 0, 0);
+        }.entity('Game'.into(), caller.into(), 0, 0);
         let initial = serde::Serde::<Game>::deserialize(ref initials)
             .expect('deserialization failed');
 
-        // [Execute] Move to left
+        // [Execute] Move to left and commit to Safe
         let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-        spawn_location_calldata.append(game_id);
+        spawn_location_calldata.append(0);
         spawn_location_calldata.append(0);
         let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
 
         // [Check] Game state
         let mut finals = IWorldDispatcher {
             contract_address: world_address
-        }.entity('Game'.into(), game_id.into(), 0, 0);
+        }.entity('Game'.into(), caller.into(), 0, 0);
         let final = serde::Serde::<Game>::deserialize(ref finals).expect('deserialization failed');
 
         // [Check] Move
@@ -149,12 +168,12 @@ mod Test {
     #[available_gas(100000000)]
     fn test_move_twice_revert_unrevealed() {
         // [Setup] World
-        let (world_address, game_id) = spawn_game();
+        let world_address = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };
 
-        // [Execute] Move to left
+        // [Execute] Move to left and commit safe
         let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-        spawn_location_calldata.append(game_id);
+        spawn_location_calldata.append(0);
         spawn_location_calldata.append(0);
         let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
         let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
