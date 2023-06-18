@@ -1,9 +1,13 @@
 #[derive(Serde, Copy, Drop, PartialEq)]
 enum Direction {
     Left: (),
-    Right: (),
+    UpLeft: (),
     Up: (),
+    UpRight: (),
+    Right: (),
+    DownRight: (),
     Down: (),
+    DownLeft: (),
 }
 
 #[system]
@@ -13,33 +17,47 @@ mod Move {
     use super::Direction;
 
     use explore::components::game::Game;
+    use explore::components::tile::Tile;
+    use explore::constants::{SECURITY_OFFSET};
 
     fn execute(ctx: Context, game_id: u32, direction: Direction) {
-        // [Query] Game entity
-        let game_sk: Query = game_id.into();
-        let game = commands::<Game>::entity(game_sk);
+        // [Check] Game is not over
+        let game = commands::<Game>::entity(game_id.into());
+        assert(game.status, 'Game is finished');
 
-        // [Check] Next block
-        let time = starknet::get_block_timestamp();
-        assert(time > game.commited_block_timestamp, 'Cannot move twice in a block');
-        let (x, y) = next_position(game, direction);
-
-        // [Compute] Updated explorer
-        let updated = Game {
-            player: game.player,
-            name: game.name,
-            status: game.status,
-            score: game.score,
-            seed: game.seed,
-            commited_block_timestamp: time,
-            x: x,
-            y: y,
-            difficulty: game.difficulty,
-            max_x: game.max_x,
-            max_y: game.max_y,
+        // [Check] Current Tile has been revealed
+        let tile = commands::<Tile>::try_entity((game_id, (game.x), (game.y)).into());
+        let revealed = match tile {
+            Option::Some(tile) => {
+                tile.explored
+            },
+            Option::None(_) => {
+                false
+            },
         };
+        assert(revealed, 'Current tile must be revealed');
 
-        commands::set_entity(game_sk, (updated, ));
+        // [Compute] Updated game entity
+        let (x, y) = next_position(game, direction);
+        let time = starknet::get_block_timestamp();
+        commands::set_entity(
+            game_id.into(),
+            (
+                Game {
+                    player: game.player,
+                    name: game.name,
+                    status: game.status,
+                    score: game.score,
+                    seed: game.seed,
+                    commited_block_timestamp: time,
+                    x: x,
+                    y: y,
+                    difficulty: game.difficulty,
+                    max_x: game.max_x,
+                    max_y: game.max_y,
+                },
+            )
+        );
         return ();
     }
 
@@ -49,18 +67,96 @@ mod Move {
                 assert(game.x != 0, 'Cannot move left');
                 (game.x - 1, game.y)
             },
-            Direction::Right(()) => {
-                assert(game.x + 1 != game.max_x, 'Cannot move right');
-                (game.x + 1, game.y)
+            Direction::UpLeft(()) => {
+                assert(game.x != 0, 'Cannot move left');
+                assert(game.y != 0, 'Cannot move up');
+                (game.x - 1, game.y - 1)
             },
             Direction::Up(()) => {
                 assert(game.y != 0, 'Cannot move up');
                 (game.x, game.y - 1)
             },
+            Direction::UpRight(()) => {
+                assert(game.x + 1 != game.max_x, 'Cannot move right');
+                assert(game.y != 0, 'Cannot move up');
+                (game.x + 1, game.y - 1)
+            },
+            Direction::Right(()) => {
+                assert(game.x + 1 != game.max_x, 'Cannot move right');
+                (game.x + 1, game.y)
+            },
+            Direction::DownRight(()) => {
+                assert(game.x + 1 != game.max_x, 'Cannot move right');
+                assert(game.y + 1 != game.max_y, 'Cannot move down');
+                (game.x + 1, game.y + 1)
+            },
             Direction::Down(()) => {
                 assert(game.y + 1 != game.max_y, 'Cannot move down');
                 (game.x, game.y + 1)
             },
+            Direction::DownLeft(()) => {
+                assert(game.x != 0, 'Cannot move left');
+                assert(game.y + 1 != game.max_y, 'Cannot move down');
+                (game.x - 1, game.y + 1)
+            },
         }
+    }
+}
+
+mod Test {
+    use traits::Into;
+    use array::{ArrayTrait, SpanTrait};
+    use option::OptionTrait;
+    use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
+    use explore::components::{game::Game, tile::Tile};
+    use explore::systems::{create::Create};
+    use explore::tests::setup::spawn_game;
+
+    #[test]
+    #[available_gas(100000000)]
+    fn test_move_left() {
+        // [Setup] World
+        let (world_address, game_id) = spawn_game();
+        let world = IWorldDispatcher { contract_address: world_address };
+
+        // [Check] Game state
+        let mut initials = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Game'.into(), game_id.into(), 0, 0);
+        let initial = serde::Serde::<Game>::deserialize(ref initials)
+            .expect('deserialization failed');
+
+        // [Execute] Move to left
+        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
+        spawn_location_calldata.append(game_id);
+        spawn_location_calldata.append(0);
+        let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+
+        // [Check] Game state
+        let mut finals = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Game'.into(), game_id.into(), 0, 0);
+        let final = serde::Serde::<Game>::deserialize(ref finals).expect('deserialization failed');
+
+        // [Check] Move
+        assert(final.x == initial.x - 1, 'Move left failed');
+    }
+
+    // @dev: This test is not working because the new tile must be revealed before moving
+    // @notice: #[should_panic(expected: ('Current tile must be revealed', ))] does not work
+    #[test]
+    #[should_panic]
+    #[available_gas(100000000)]
+    fn test_move_twice_revert_unrevealed() {
+        // [Setup] World
+        let (world_address, game_id) = spawn_game();
+        let world = IWorldDispatcher { contract_address: world_address };
+
+        // [Execute] Move to left
+        let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
+        spawn_location_calldata.append(game_id);
+        spawn_location_calldata.append(0);
+        let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+        let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
     }
 }
