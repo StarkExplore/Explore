@@ -13,8 +13,8 @@ mod Create {
 
         // [Command] Create game
         let seed = ctx.caller_system; // TODO: use tx hash instead
-        let x : u16 = MAX_X / 2_u16;
-        let y : u16 = MAX_Y / 2_u16;
+        let x: u16 = MAX_X / 2_u16;
+        let y: u16 = MAX_Y / 2_u16;
         commands::set_entity(
             ctx.caller_account.into(),
             (
@@ -37,8 +37,7 @@ mod Create {
         // [Compute] Create a tile
         let clue = TileTrait::get_clue(seed, LEVEL, MAX_X, MAX_Y, x, y);
         commands::set_entity(
-            (ctx.caller_account, x, y).into(),
-            (Tile { x: x, y: y, explored: true, clue: clue }, )
+            (ctx.caller_account, x, y).into(), (Tile { x: x, y: y, explored: true, clue: clue }, )
         );
     }
 }

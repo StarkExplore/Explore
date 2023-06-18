@@ -68,24 +68,24 @@ mod Reveal {
         );
 
         // [Command] Max score reached then level up and reset score, otherwise increase the score
-        let max_score : u64 = (game.max_x * game.max_y).into();
+        let max_score: u64 = (game.max_x * game.max_y).into();
         if game.score == max_score {
-            let max_x : u16 = game.max_x + 2_u16;
-            let max_y : u16 = game.max_y + 2_u16;
-            let x : u16 = max_x / 2_u16;
-            let y : u16 = max_y / 2_u16;
+            let max_x: u16 = game.max_x + 2_u16;
+            let max_y: u16 = game.max_y + 2_u16;
+            let x: u16 = max_x / 2_u16;
+            let y: u16 = max_y / 2_u16;
             commands::set_entity(
                 ctx.caller_account.into(),
                 (
                     Game {
                         name: game.name,
                         status: game.status,
-                        score: 1_u64,  // reset score
+                        score: 1_u64, // reset score
                         seed: game.seed,
                         commited_block_timestamp: game.commited_block_timestamp,
                         x: x,
                         y: y,
-                        level: game.level + 1_u8,  // level up
+                        level: game.level + 1_u8, // level up
                         max_x: max_x,
                         max_y: max_y,
                         action: game.action,
