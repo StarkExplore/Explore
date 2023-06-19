@@ -6,12 +6,12 @@ declare -A dangers
 ADDRESS=0
 PLAYER_NAME=0 
 GAME_STATE=0
-# player_score=0
+# PLAYER_SCORE=0
 # seed=0
 # timestamp=0
 PLAYER_X=0
 PLAYER_Y=0
-level=0
+PLAYER_LEVEL=0
 GRID_SIZE=0
 ACTION=0
 
@@ -27,12 +27,12 @@ fetch_game() {
     
     PLAYER_NAME=$(echo "${game_info[0]#0x}" | xxd -r -p)  
     GAME_STATE=$((16#${game_info[1]#0x}))
-    # player_score=$((16#${game_info[2]#0x}))
+    PLAYER_SCORE=$((16#${game_info[2]#0x}))
     # seed=$((16#${game_info[3]#0x}))
     # timestamp=$((16#${game_info[4]#0x}))
     PLAYER_X=$((16#${game_info[5]#0x}))
     PLAYER_Y=$((16#${game_info[6]#0x}))
-    level=$((16#${game_info[7]#0x}))
+    PLAYER_LEVEL=$((16#${game_info[7]#0x}))
     GRID_SIZE=$((16#${game_info[8]#0x}))
     # action=$((16#${game_info[9]#0x}))
 }
@@ -77,14 +77,18 @@ execute_create() {
     sozo execute Create -c 0x42616c3768617a6172
 }
 
-# Fonction pour effacer l'écran
 clear_screen() {
     printf "\033c"
 }
 
-# Fonction pour afficher la grille
-display_grid() {
+display_header() {
     clear_screen
+    printf "Name : ${PLAYER_NAME}\n"
+    printf "Level: ${PLAYER_LEVEL}\n"
+    printf "Score: ${PLAYER_SCORE}\n"
+}
+
+display_grid() {
     count=$((GRID_SIZE * 4 - 1))
 
     # Top edge
@@ -97,7 +101,9 @@ display_grid() {
     for ((row=0; row<$GRID_SIZE; row++)); do
         for ((col=0; col<$GRID_SIZE; col++)); do
             if [[ "$col" -eq "$PLAYER_X" && "$row" -eq "$PLAYER_Y" ]]; then
-                if [[ "${dangers["$col,$row"]}" -eq 1 ]]; then
+                if [[ "$GAME_STATE" -eq 0 ]]; then
+                    printf "│<💀"
+                elif [[ "${dangers["$col,$row"]}" -eq 1 ]]; then
                     printf "│<\e[31m${visited["$col,$row"]}\e[0m>"
                 else
                     printf "│<\e[32m${visited["$col,$row"]}\e[0m>"
@@ -134,34 +140,33 @@ display_grid() {
     printf "╯\n"
 }
 
-# Function to display the menu
 display_menu() {
     printf "Use the following keys:\n"
-    printf "    \e[32m1\e[0m  : Move down left\n"
-    printf "    \e[32m2\e[0m  : Move down\n"
-    printf "    \e[32m3\e[0m  : Move down right\n"
-    printf "    \e[32m4\e[0m  : Move left\n"
-    printf "    \e[32m6\e[0m  : Move right\n"
-    printf "    \e[32m7\e[0m  : Move up left\n"
-    printf "    \e[32m8\e[0m  : Move up\n"
-    printf "    \e[32m9\e[0m  : Move up right\n"
+    printf "    \e[32m1\e[0m : Move down left\n"
+    printf "    \e[32m2\e[0m : Move down\n"
+    printf "    \e[32m3\e[0m : Move down right\n"
+    printf "    \e[32m4\e[0m : Move left\n"
+    printf "    \e[32m6\e[0m : Move right\n"
+    printf "    \e[32m7\e[0m : Move up left\n"
+    printf "    \e[32m8\e[0m : Move up\n"
+    printf "    \e[32m9\e[0m : Move up right\n"
     if [[ "$ACTION" -eq "0" ]]; then
-      printf "   <\e[32mS\e[0m> : Switch to safe mode\n"
-      printf "    \e[32mU\e[0m  : Switch to unsafe mode\n"
+        printf "   <\e[32mS\e[0m>: Switch to safe mode\n"
+        printf "    \e[32mU\e[0m : Switch to unsafe mode\n"
     else
-      printf "    \e[32mS\e[0m  : Switch to safe mode\n"
-      printf "   <\e[32mU\e[0m> : Switch to unsafe mode\n"
+        printf "    \e[32mS\e[0m : Switch to safe mode\n"
+        printf "   <\e[32mU\e[0m>: Switch to unsafe mode\n"
     fi
     printf "    \e[32mR\e[0m  : Reset the game\n"
     printf "    \e[32mQ\e[0m  : Quit the game\n"
     printf "\n"
 }
 
-# Function to move the player
 move_player() {
     while true; do
         fetch_game
         fetch_tiles
+        display_header
         display_grid
         display_menu
 
@@ -229,11 +234,9 @@ move_player() {
     done
 }
 
-# Fonction principale
 main() {
     read_address
     move_player
 }
 
-# Appel de la fonction principale
 main
