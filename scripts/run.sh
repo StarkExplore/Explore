@@ -73,6 +73,10 @@ execute_move() {
     fi
 }
 
+execute_create() {
+    sozo execute Create -c 0x42616c3768617a6172
+}
+
 # Fonction pour effacer l'écran
 clear_screen() {
     printf "\033c"
@@ -148,6 +152,7 @@ display_menu() {
       printf "    \e[32mS\e[0m  : Switch to safe mode\n"
       printf "   <\e[32mU\e[0m> : Switch to unsafe mode\n"
     fi
+    printf "    \e[32mR\e[0m  : Reset the game\n"
     printf "    \e[32mQ\e[0m  : Quit the game\n"
     printf "\n"
 }
@@ -171,6 +176,9 @@ move_player() {
                 ;;
             "u")  # Switch to unsafe mode
                 ACTION=1
+                ;;
+            "r")  # Switch to unsafe mode
+                execute_create
                 ;;
 
             "1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9")  # Number keys

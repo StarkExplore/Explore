@@ -142,8 +142,8 @@ mod Reveal {
         };
 
         // [Compute] Create a tile
-        let clue = TileTrait::get_clue(game.seed, level, size, x, y);
-        let danger = TileTrait::is_danger(game.seed, level, x, y);
+        let clue = TileTrait::get_clue(seed, level, size, x, y);
+        let danger = TileTrait::is_danger(seed, level, x, y);
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
             (Tile { explored: true, danger: danger, clue: clue, x: x, y: y }, )
