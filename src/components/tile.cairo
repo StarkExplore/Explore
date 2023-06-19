@@ -87,8 +87,8 @@ fn compute_danger(seed: felt252, level: u8, x: u16, y: u16) -> u8 {
 
     let hash: u256 = poseidon_hash_span(serialized.span()).into();
 
-    // [Compute] Level + 19% chance of being a danger
-    let probability = 19_u8 + level;
+    // [Compute] Level + 14% chance of being a danger
+    let probability = 14_u8 + level;
     let result: u128 = hash.low % 100;
     if result < probability.into() {
         return 1_u8;

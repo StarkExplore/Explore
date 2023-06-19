@@ -121,12 +121,12 @@ mod Reveal {
         // [Command] Delete all previous tiles
         let mut idx: u16 = 0_u16;
         loop {
-            if idx >= game.size * game.size {
+            if idx >= size * size {
                 break ();
             }
 
-            let mut col: u16 = idx % game.size;
-            let mut row: u16 = idx / game.size;
+            let mut col: u16 = idx % size;
+            let mut row: u16 = idx / size;
 
             // [Error] This command has no effect
             // let mut tile_sk: Query = (ctx.caller_account, col, row).into();
