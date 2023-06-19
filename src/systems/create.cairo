@@ -3,44 +3,68 @@ mod Create {
     use array::ArrayTrait;
     use serde::Serde;
     use traits::Into;
+    use box::BoxTrait;
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
     use explore::components::tile::{Tile, TileTrait};
-    use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y};
+    use explore::constants::{LEVEL, SIZE};
 
-    fn execute(ctx: Context, name: felt252) -> felt252 {
+    fn execute(ctx: Context, name: felt252) {
         let time = starknet::get_block_timestamp();
+        let info = starknet::get_tx_info().unbox();
 
         // [Command] Create game
-        let game_id = commands::uuid();
-        let seed = ctx.caller_system; // TODO: use tx hash instead
+        let seed = info.transaction_hash;
+        let x: u16 = SIZE / 2_u16;
+        let y: u16 = SIZE / 2_u16;
         commands::set_entity(
-            game_id.into(),
+            ctx.caller_account.into(),
             (
                 Game {
-                    player: ctx.caller_account.into(),
                     name: name,
                     status: true,
                     score: 1_u64,
                     seed: seed,
                     commited_block_timestamp: starknet::get_block_timestamp(),
-                    x: START_X,
-                    y: START_Y,
-                    difficulty: DIFFICULTY,
-                    max_x: MAX_X,
-                    max_y: MAX_Y,
+                    x: x,
+                    y: y,
+                    level: LEVEL,
+                    size: SIZE,
+                    action: 0_u8,
                 },
             )
         );
 
-        // [Compute] Create a tile
-        let clue = TileTrait::get_clue(seed, DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y);
-        commands::set_entity(
-            (game_id, (START_X), (START_Y)).into(),
-            (Tile { x: START_X, y: START_Y, explored: true, clue: clue }, )
-        );
+        // [Command] Delete all existing tiles
+        let mut idx: u16 = 0_u16;
+        loop {
+            if idx >= SIZE * SIZE {
+                break ();
+            }
 
-        game_id.into()
+            let mut col: u16 = idx % SIZE;
+            let mut row: u16 = idx / SIZE;
+
+            // [Error] This command has no effect
+            // let mut tile_sk: Query = (ctx.caller_account, col, row).into();
+            // commands::<Tile>::delete_entity(tile_sk);
+
+            // [Workaround] Set all entities to 0
+            commands::set_entity(
+                (ctx.caller_account, col, row).into(),
+                (Tile { explored: false, danger: false, clue: 0_u8, x: 0_u16, y: 0_u16 }, ),
+            );
+
+            idx += 1_u16;
+        };
+
+        // [Compute] Create a tile
+        let clue = TileTrait::get_clue(seed, LEVEL, SIZE, x, y);
+        let danger = TileTrait::is_danger(seed, LEVEL, x, y);
+        commands::set_entity(
+            (ctx.caller_account, x, y).into(),
+            (Tile { explored: true, danger: danger, clue: clue, x: x, y: y }, )
+        );
     }
 }
 
@@ -53,45 +77,47 @@ mod Test {
     use explore::components::{game::Game, tile::Tile};
     use explore::systems::{create::Create};
     use explore::tests::setup::{spawn_game, NAME};
-    use explore::constants::{DIFFICULTY, MAX_X, MAX_Y, START_X, START_Y};
+    use explore::constants::{LEVEL, SIZE};
 
     #[test]
     #[available_gas(100000000)]
     fn test_create_game() {
         // [Setup] World
-        let (world_address, game_id) = spawn_game();
+        let world_address = spawn_game();
+        let caller = starknet::get_caller_address();
 
         // [Check] Number of games
         let (games, _) = IWorldDispatcher {
             contract_address: world_address
-        }.entities('Game'.into(), game_id.into());
+        }.entities('Game'.into(), caller.into());
         assert(games.len() == 1, 'wrong number of games');
 
         // [Check] Game state
         let mut games = IWorldDispatcher {
             contract_address: world_address
-        }.entity('Game'.into(), game_id.into(), 0, 0);
+        }.entity('Game'.into(), caller.into(), 0, 0);
         let game = serde::Serde::<Game>::deserialize(ref games).expect('deserialization failed');
 
         assert(game.name == NAME, 'wrong name');
         assert(game.status, 'wrong status');
         assert(game.score == 1_u64, 'wrong score');
-        assert(game.x == START_X, 'wrong x');
-        assert(game.y == START_Y, 'wrong y');
-        assert(game.difficulty == DIFFICULTY, 'wrong difficulty');
-        assert(game.max_x == MAX_X, 'wrong max_x');
-        assert(game.max_y == MAX_Y, 'wrong max_y');
+        assert(game.x == SIZE / 2_u16, 'wrong x');
+        assert(game.y == SIZE / 2_u16, 'wrong y');
+        assert(game.level == LEVEL, 'wrong level');
+        assert(game.size == SIZE, 'wrong size');
+        assert(game.action == 0_u8, 'wrong action');
 
         // [Check] Tile state
-        let tile_id: Query = (game_id, game.x, game.y).into();
+        let tile_id: Query = (caller, game.x, game.y).into();
         let mut tiles = IWorldDispatcher {
             contract_address: world_address
         }.entity('Tile'.into(), tile_id.into(), 0, 0);
         let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
 
-        assert(tile.x == START_X, 'wrong x');
-        assert(tile.y == START_Y, 'wrong y');
+        assert(tile.x == SIZE / 2_u16, 'wrong x');
+        assert(tile.y == SIZE / 2_u16, 'wrong y');
         assert(tile.explored == true, 'wrong explored');
-        assert(tile.clue == 2_u8, 'wrong clue');
+        assert(tile.danger == true, 'wrong danger');
+        assert(tile.clue == 1_u8, 'wrong clue');
     }
 }

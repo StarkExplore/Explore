@@ -12,7 +12,7 @@ use explore::systems::{create::Create, move::Move, reveal::Reveal};
 
 const NAME: felt252 = 'NAME';
 
-fn spawn_game() -> (ContractAddress, felt252) {
+fn spawn_game() -> ContractAddress {
     // [Setup] Components
     let mut components = array::ArrayTrait::new();
     components.append(GameComponent::TEST_CLASS_HASH);
@@ -41,11 +41,7 @@ fn spawn_game() -> (ContractAddress, felt252) {
     let mut spawn_game_calldata = array::ArrayTrait::<felt252>::new();
     spawn_game_calldata.append(NAME.into());
 
-    let mut res = world.execute('Create'.into(), spawn_game_calldata.span());
-    assert(res.len() > 0, 'did not create');
+    world.execute('Create'.into(), spawn_game_calldata.span());
 
-    let game_id = serde::Serde::<felt252>::deserialize(ref res)
-        .expect('spawn deserialization failed');
-
-    (world.contract_address, game_id)
+    world.contract_address
 }

@@ -6,59 +6,66 @@ use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
 use explore::components::{game::Game, tile::Tile};
 use explore::systems::{create::Create};
 use explore::tests::setup::spawn_game;
+use debug::PrintTrait;
 
 #[test]
-#[available_gas(100000000000)]
+#[available_gas(100000000000000)]
 fn test_play() {
     // [Setup] World
-    let (world_address, game_id) = spawn_game();
+    let world_address = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
+    let mut empty = array::ArrayTrait::<felt252>::new();
 
-    // [Execute] Move up
-    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(2);
-    let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+    // [Execute] Move left and commit safe
+    let mut calldata = array::ArrayTrait::<felt252>::new();
+    calldata.append(0);
+    calldata.append(0);
+    world.execute('Move'.into(), calldata.span());
+    world.execute('Reveal'.into(), empty.span());
 
-    // [Execute] Reveal
-    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
+    // [Execute] Move up-right and commit unsafe
+    let mut calldata = array::ArrayTrait::<felt252>::new();
+    calldata.append(1);
+    calldata.append(3);
+    world.execute('Move'.into(), calldata.span());
+    world.execute('Reveal'.into(), empty.span());
 
-    // [Execute] Move down left
-    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(7);
-    let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+    // [Execute] Move left and commit safe
+    let mut calldata = array::ArrayTrait::<felt252>::new();
+    calldata.append(0);
+    calldata.append(0);
+    world.execute('Move'.into(), calldata.span());
+    world.execute('Reveal'.into(), empty.span());
 
-    // [Execute] Reveal
-    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
+    // [Check] Game state
+    // [Error] Test ran out of gas
+    let mut tiles = IWorldDispatcher {
+        contract_address: world_address
+    }.entity('Tile'.into(), starknet::get_caller_address().into(), 0, 0);
+    assert(tiles.len() == 0_u32, 'wrong number of tile');
 }
 
 #[test]
 #[should_panic]
-#[available_gas(100000000000)]
+#[available_gas(100000000000000)]
 fn test_play_revert_game_over() {
     // [Setup] World
-    let (world_address, game_id) = spawn_game();
+    let world_address = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
 
-    // [Execute] Move right
-    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(4);
-    let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+    // [Execute] Move up and commit safe
+    let mut calldata = array::ArrayTrait::<felt252>::new();
+    calldata.append(0);
+    calldata.append(2);
+    let mut res = world.execute('Move'.into(), calldata.span());
 
     // [Execute] Reveal
-    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    let mut res = world.execute('Reveal'.into(), spawn_location_calldata.span());
+    let mut calldata = array::ArrayTrait::<felt252>::new();
+    let mut res = world.execute('Reveal'.into(), calldata.span());
 
-    // [Execute] Move to left
-    let mut spawn_location_calldata = array::ArrayTrait::<felt252>::new();
-    spawn_location_calldata.append(game_id);
-    spawn_location_calldata.append(0);
-    let mut res = world.execute('Move'.into(), spawn_location_calldata.span());
+    // [Execute] Move to left and commit safe
+    let mut calldata = array::ArrayTrait::<felt252>::new();
+    calldata.append(0);
+    calldata.append(0);
+    let mut res = world.execute('Move'.into(), calldata.span());
 }
