@@ -133,22 +133,22 @@ display_grid() {
 # Function to display the menu
 display_menu() {
     printf "Use the following keys:\n"
-    printf "    \e[32m1\e[0m   : Move down left\n"
-    printf "    \e[32m2\e[0m   : Move down\n"
-    printf "    \e[32m3\e[0m   : Move down right\n"
-    printf "    \e[32m4\e[0m   : Move left\n"
-    printf "    \e[32m6\e[0m   : Move right\n"
-    printf "    \e[32m7\e[0m   : Move up left\n"
-    printf "    \e[32m8\e[0m   : Move up\n"
-    printf "    \e[32m9\e[0m   : Move up right\n"
+    printf "    \e[32m1\e[0m  : Move down left\n"
+    printf "    \e[32m2\e[0m  : Move down\n"
+    printf "    \e[32m3\e[0m  : Move down right\n"
+    printf "    \e[32m4\e[0m  : Move left\n"
+    printf "    \e[32m6\e[0m  : Move right\n"
+    printf "    \e[32m7\e[0m  : Move up left\n"
+    printf "    \e[32m8\e[0m  : Move up\n"
+    printf "    \e[32m9\e[0m  : Move up right\n"
     if [[ "$ACTION" -eq "0" ]]; then
-      printf "    <\e[32mS\e[0m> : Switch to safe mode\n"
-      printf "    \e[32mU\e[0m   : Switch to unsafe mode\n"
+      printf "   <\e[32mS\e[0m> : Switch to safe mode\n"
+      printf "    \e[32mU\e[0m  : Switch to unsafe mode\n"
     else
-      printf "    \e[32mS\e[0m   : Switch to safe mode\n"
-      printf "    <\e[32mU\e[0m> : Switch to unsafe mode\n"
+      printf "    \e[32mS\e[0m  : Switch to safe mode\n"
+      printf "   <\e[32mU\e[0m> : Switch to unsafe mode\n"
     fi
-    printf "    \e[32mQ\e[0m   : Quit the game\n"
+    printf "    \e[32mQ\e[0m  : Quit the game\n"
     printf "\n"
 }
 
