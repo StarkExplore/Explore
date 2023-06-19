@@ -23,7 +23,6 @@ struct Game {
     x: u16,
     y: u16,
     level: u8,
-    max_x: u16,
-    max_y: u16,
+    size: u16,
     action: u8,
 }

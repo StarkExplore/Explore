@@ -59,8 +59,7 @@ mod Move {
                     x: x,
                     y: y,
                     level: game.level,
-                    max_x: game.max_x,
-                    max_y: game.max_y,
+                    size: game.size,
                     action: commit,
                 },
             )
@@ -95,26 +94,26 @@ mod Move {
                 (game.x, game.y - 1)
             },
             Direction::UpRight(()) => {
-                assert(game.x + 1 != game.max_x, 'Cannot move right');
+                assert(game.x + 1 != game.size, 'Cannot move right');
                 assert(game.y != 0, 'Cannot move up');
                 (game.x + 1, game.y - 1)
             },
             Direction::Right(()) => {
-                assert(game.x + 1 != game.max_x, 'Cannot move right');
+                assert(game.x + 1 != game.size, 'Cannot move right');
                 (game.x + 1, game.y)
             },
             Direction::DownRight(()) => {
-                assert(game.x + 1 != game.max_x, 'Cannot move right');
-                assert(game.y + 1 != game.max_y, 'Cannot move down');
+                assert(game.x + 1 != game.size, 'Cannot move right');
+                assert(game.y + 1 != game.size, 'Cannot move down');
                 (game.x + 1, game.y + 1)
             },
             Direction::Down(()) => {
-                assert(game.y + 1 != game.max_y, 'Cannot move down');
+                assert(game.y + 1 != game.size, 'Cannot move down');
                 (game.x, game.y + 1)
             },
             Direction::DownLeft(()) => {
                 assert(game.x != 0, 'Cannot move left');
-                assert(game.y + 1 != game.max_y, 'Cannot move down');
+                assert(game.y + 1 != game.size, 'Cannot move down');
                 (game.x - 1, game.y + 1)
             },
         }

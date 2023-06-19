@@ -3,7 +3,10 @@ mod Reveal {
     use array::ArrayTrait;
     use serde::Serde;
     use traits::Into;
+    use box::BoxTrait;
     use poseidon::poseidon_hash_span;
+    use debug::PrintTrait;
+    use starknet::ContractAddress;
 
     use explore::components::game::Game;
     use explore::components::tile::{Tile, TileTrait};
@@ -36,7 +39,7 @@ mod Reveal {
         // [Check] Tile danger does not match the committed action
         let danger = TileTrait::get_danger(game.seed, game.level, game.x, game.y);
         if danger != game.action {
-            // [Compute] Updated game entity
+            // [Compute] Updated game entity, game over
             commands::set_entity(
                 ctx.caller_account.into(),
                 (
@@ -49,68 +52,101 @@ mod Reveal {
                         x: game.x,
                         y: game.y,
                         level: game.level,
-                        max_x: game.max_x,
-                        max_y: game.max_y,
+                        size: game.size,
                         action: game.action,
                     },
                 )
             );
+
             return ();
         }
 
         // [Command] Create the tile entity
-        let clue = TileTrait::get_clue(
-            game.seed, game.level, game.max_x, game.max_y, game.x, game.y
-        );
+        let clue = TileTrait::get_clue(game.seed, game.level, game.size, game.x, game.y);
+        let danger = TileTrait::is_danger(game.seed, game.level, game.x, game.y);
         commands::set_entity(
             (ctx.caller_account, game.x, game.y).into(),
-            (Tile { x: game.x, y: game.y, explored: true, clue: clue }, ),
+            (Tile { explored: true, danger: danger, clue: clue, x: game.x, y: game.y }, ),
         );
 
-        // [Command] Max score reached then level up and reset score, otherwise increase the score
-        let max_score: u64 = (game.max_x * game.max_y).into();
-        if game.score == max_score {
-            let max_x: u16 = game.max_x + 2_u16;
-            let max_y: u16 = game.max_y + 2_u16;
-            let x: u16 = max_x / 2_u16;
-            let y: u16 = max_y / 2_u16;
+        // [Check] Max score not reached
+        let max_score: u64 = (game.size * game.size).into();
+        if game.score + 1_u64 != max_score {
+            // [Compute] Updated game, increase score
             commands::set_entity(
                 ctx.caller_account.into(),
                 (
                     Game {
                         name: game.name,
                         status: game.status,
-                        score: 1_u64, // reset score
+                        score: game.score + 1_u64,
                         seed: game.seed,
                         commited_block_timestamp: game.commited_block_timestamp,
-                        x: x,
-                        y: y,
-                        level: game.level + 1_u8, // level up
-                        max_x: max_x,
-                        max_y: max_y,
+                        x: game.x,
+                        y: game.y,
+                        level: game.level,
+                        size: game.size,
                         action: game.action,
                     },
                 )
             );
+
             return ();
         }
+
+        // [Command] Update Game, level-up and reset score
+        let seed = starknet::get_tx_info().unbox().transaction_hash;
+        let size: u16 = game.size + 2_u16;
+        let x: u16 = size / 2_u16;
+        let y: u16 = size / 2_u16;
+        let level = game.level + 1_u8;
         commands::set_entity(
             ctx.caller_account.into(),
             (
                 Game {
                     name: game.name,
                     status: game.status,
-                    score: game.score + 1_u64,
-                    seed: game.seed,
+                    score: 1_u64, // reset score
+                    seed: seed,
                     commited_block_timestamp: game.commited_block_timestamp,
-                    x: game.x,
-                    y: game.y,
-                    level: game.level,
-                    max_x: game.max_x,
-                    max_y: game.max_y,
+                    x: x,
+                    y: y,
+                    level: level, // level up
+                    size: size,
                     action: game.action,
                 },
             )
+        );
+
+        // [Command] Delete all previous tiles
+        let mut idx: u16 = 0_u16;
+        loop {
+            if idx >= game.size * game.size {
+                break ();
+            }
+
+            let mut col: u16 = idx % game.size;
+            let mut row: u16 = idx / game.size;
+
+            // [Error] This command has no effect
+            // let mut tile_sk: Query = (ctx.caller_account, col, row).into();
+            // commands::<Tile>::delete_entity(tile_sk);
+
+            // [Workaround] Set all entities to 0
+            commands::set_entity(
+                (ctx.caller_account, col, row).into(),
+                (Tile { explored: false, danger: false, clue: 0_u8, x: 0_u16, y: 0_u16 }, ),
+            );
+
+            idx += 1_u16;
+        };
+
+        // [Compute] Create a tile
+        let clue = TileTrait::get_clue(game.seed, level, size, x, y);
+        let danger = TileTrait::is_danger(game.seed, level, x, y);
+        commands::set_entity(
+            (ctx.caller_account, x, y).into(),
+            (Tile { explored: true, danger: danger, clue: clue, x: x, y: y }, )
         );
     }
 }
@@ -189,6 +225,7 @@ mod Test {
         assert(tile.x == game.x, 'wrong x');
         assert(tile.y == game.y, 'wrong y');
         assert(tile.explored == true, 'tile not explored');
+        assert(tile.danger == true, 'wrong danger');
         assert(tile.clue == 1_u8, 'wrong clue');
     }
 

@@ -6,6 +6,7 @@ use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
 use explore::components::{game::Game, tile::Tile};
 use explore::systems::{create::Create};
 use explore::tests::setup::spawn_game;
+use debug::PrintTrait;
 
 #[test]
 #[available_gas(100000000000000)]
@@ -13,26 +14,35 @@ fn test_play() {
     // [Setup] World
     let world_address = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
+    let mut empty = array::ArrayTrait::<felt252>::new();
 
     // [Execute] Move left and commit safe
     let mut calldata = array::ArrayTrait::<felt252>::new();
     calldata.append(0);
     calldata.append(0);
-    let mut res = world.execute('Move'.into(), calldata.span());
-
-    // [Execute] Reveal
-    let mut calldata = array::ArrayTrait::<felt252>::new();
-    let mut res = world.execute('Reveal'.into(), calldata.span());
+    world.execute('Move'.into(), calldata.span());
+    world.execute('Reveal'.into(), empty.span());
 
     // [Execute] Move up-right and commit unsafe
     let mut calldata = array::ArrayTrait::<felt252>::new();
     calldata.append(1);
     calldata.append(3);
-    let mut res = world.execute('Move'.into(), calldata.span());
+    world.execute('Move'.into(), calldata.span());
+    world.execute('Reveal'.into(), empty.span());
 
-    // [Execute] Reveal
+    // [Execute] Move left and commit safe
     let mut calldata = array::ArrayTrait::<felt252>::new();
-    let mut res = world.execute('Reveal'.into(), calldata.span());
+    calldata.append(0);
+    calldata.append(0);
+    world.execute('Move'.into(), calldata.span());
+    world.execute('Reveal'.into(), empty.span());
+
+    // [Check] Game state
+    // [Error] Test ran out of gas
+    let mut tiles = IWorldDispatcher {
+        contract_address: world_address
+    }.entity('Tile'.into(), starknet::get_caller_address().into(), 0, 0);
+    assert(tiles.len() == 0_u32, 'wrong number of tile');
 }
 
 #[test]
