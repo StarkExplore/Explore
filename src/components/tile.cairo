@@ -78,22 +78,50 @@ impl TileImpl of TileTrait {
 }
 
 fn compute_danger(seed: felt252, level: u8, x: u16, y: u16) -> u8 {
-    // [Compute] Hash the position
+    let (size, n_mines) = level(level);
+    is_mine(seed, n_mines, size * size, x + y * size)
+}
+
+// Assuming a linear board (which can be wrapped into a square) this computes if there is a mine at the given position
+// using an algorithm that uniformly disperses the mines across the board.
+fn is_mine(seed: felt252, n_mines: u16, n_tiles: u16, index: u16) -> u8 {
+    let MULTIPLIER = 10000_u128; // like a percentage but larger to prevent underflow
+    let mut mines_to_place = n_mines;
+    let mut i = 0;
+    return loop {
+        if mines_to_place == 0 {
+            break 0_u8;
+        }
+        let rand = uniform_random(seed + i.into(), MULTIPLIER); // uniform random number between 0 and MULTIPLIER
+        let tile_mine_probability: u128 = mines_to_place.into() * MULTIPLIER / (n_tiles - i).into();
+        let tile_is_mine = if rand <= tile_mine_probability {
+            mines_to_place -= 1;
+            1_u8
+        } else { 0_u8 };
+        if i == index {
+            break tile_is_mine;
+        }
+        i+=1;
+    };
+}
+
+fn uniform_random(seed: felt252, max: u128) -> u128 {
     let mut serialized = ArrayTrait::new();
     serialized.append(BASE_SEED);
     serialized.append(seed);
-    serialized.append(x.into());
-    serialized.append(y.into());
-
     let hash: u256 = poseidon_hash_span(serialized.span()).into();
+    hash.low % max
+}
 
-    // [Compute] Level + 14% chance of being a danger
-    let probability = 14_u8 + level;
-    let result: u128 = hash.low % 100;
-    if result < probability.into() {
-        return 1_u8;
+// for a given level returns the size of the board and the number of mines
+fn level(level: u8) -> (u16, u16) {
+    if level == 0 {
+        (3, 2)
+    } else if level == 1 {
+        (4, 3)
+    } else {
+        (0, 0) // not a defined level
     }
-    0_u8
 }
 
 #[test]
@@ -108,4 +136,24 @@ fn test_get_clue() {
 fn test_get_danger() {
     let danger = TileTrait::get_danger(0, 0_u8, 0_u16, 0_u16);
     assert(danger == 0_u8, 'wrong danger')
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_is_mine() {
+    // allocate some number of mines in a board and check this number is actually added
+    let n_mines = 17_u16;
+    let n_tiles = 32_u16; // must be larger than n_mines
+    let seed: felt252 = 0;
+
+    let mut seen_mines = 0_u8;
+    let mut i = 0_u16;
+    loop {
+        seen_mines += is_mine(seed, n_mines, n_tiles, i);
+        if i >= n_tiles - 1 {
+            break ();
+        }
+        i+=1;
+    };
+    assert(seen_mines.into() == n_mines, 'incorrect number mines');
 }
