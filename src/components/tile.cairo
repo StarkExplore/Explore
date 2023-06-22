@@ -85,6 +85,8 @@ fn compute_danger(seed: felt252, level: u8, x: u16, y: u16) -> u8 {
 // Assuming a linear board (which can be wrapped into a square) this computes if there is a mine at the given position
 // using an algorithm that uniformly disperses the mines across the board.
 fn is_mine(seed: felt252, n_mines: u16, n_tiles: u16, index: u16) -> u8 {
+    assert(n_mines < n_tiles, 'too many mines');
+
     let MULTIPLIER = 10000_u128; // like a percentage but larger to prevent underflow
     let mut mines_to_place = n_mines;
     let mut i = 0;
@@ -139,7 +141,7 @@ fn test_get_danger() {
 fn test_is_mine() {
     // allocate some number of mines in a board and check this number is actually added
     let n_mines = 17_u16;
-    let n_tiles = 32_u16; // must be larger than n_mines
+    let n_tiles = 32_u16;
     let seed: felt252 = 0;
 
     let mut seen_mines = 0_u8;
