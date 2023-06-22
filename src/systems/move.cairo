@@ -1,14 +1,3 @@
-#[derive(Serde, Copy, Drop, PartialEq)]
-enum Direction {
-    Left: (),
-    UpLeft: (),
-    Up: (),
-    UpRight: (),
-    Right: (),
-    DownRight: (),
-    Down: (),
-    DownLeft: (),
-}
 
 #[derive(Serde, Copy, Drop, PartialEq)]
 enum Action {
@@ -20,39 +9,31 @@ enum Action {
 mod Move {
     use array::ArrayTrait;
     use traits::Into;
-    use super::{Direction, Action};
+    use super::{Action};
 
-    use explore::components::game::Game;
-    use explore::components::tile::Tile;
+    use explore::components::game::{Game};
+    use explore::components::tile::{Tile, compute_danger};
     use explore::constants::{SECURITY_OFFSET};
+    use explore::direction::{Direction, next_position};
 
     fn execute(ctx: Context, action: Action, direction: Direction) {
         // [Check] Game is not over
         let game = commands::<Game>::entity(ctx.caller_account.into());
         assert(game.status, 'Game is finished');
 
-        // [Check] Current Tile has been revealed
-        let tile = commands::<Tile>::try_entity((ctx.caller_account, game.x, game.y).into());
-        let revealed = match tile {
-            Option::Some(tile) => {
-                tile.explored
-            },
-            Option::None(_) => {
-                false
-            },
-        };
-        assert(revealed, 'Current tile must be revealed');
-
         // [Compute] Updated game entity
-        let commit = next_action(action);
         let (x, y) = next_position(game, direction);
+
+       // if the position moved into is a mine then the game is over
+       let status = compute_danger(game.seed, game.level, x, y) == 0;
+
         let time = starknet::get_block_timestamp();
         commands::set_entity(
             ctx.caller_account.into(),
             (
                 Game {
                     name: game.name,
-                    status: game.status,
+                    status,
                     score: game.score,
                     seed: game.seed,
                     commited_block_timestamp: time,
@@ -60,63 +41,10 @@ mod Move {
                     y: y,
                     level: game.level,
                     size: game.size,
-                    action: commit,
                 },
             )
         );
         return ();
-    }
-
-    fn next_action(action: Action) -> u8 {
-        match action {
-            Action::Safe(()) => {
-                0_u8
-            },
-            Action::Unsafe(()) => {
-                1_u8
-            },
-        }
-    }
-
-    fn next_position(game: Game, direction: Direction) -> (u16, u16) {
-        match direction {
-            Direction::Left(()) => {
-                assert(game.x != 0, 'Cannot move left');
-                (game.x - 1, game.y)
-            },
-            Direction::UpLeft(()) => {
-                assert(game.x != 0, 'Cannot move left');
-                assert(game.y != 0, 'Cannot move up');
-                (game.x - 1, game.y - 1)
-            },
-            Direction::Up(()) => {
-                assert(game.y != 0, 'Cannot move up');
-                (game.x, game.y - 1)
-            },
-            Direction::UpRight(()) => {
-                assert(game.x + 1 != game.size, 'Cannot move right');
-                assert(game.y != 0, 'Cannot move up');
-                (game.x + 1, game.y - 1)
-            },
-            Direction::Right(()) => {
-                assert(game.x + 1 != game.size, 'Cannot move right');
-                (game.x + 1, game.y)
-            },
-            Direction::DownRight(()) => {
-                assert(game.x + 1 != game.size, 'Cannot move right');
-                assert(game.y + 1 != game.size, 'Cannot move down');
-                (game.x + 1, game.y + 1)
-            },
-            Direction::Down(()) => {
-                assert(game.y + 1 != game.size, 'Cannot move down');
-                (game.x, game.y + 1)
-            },
-            Direction::DownLeft(()) => {
-                assert(game.x != 0, 'Cannot move left');
-                assert(game.y + 1 != game.size, 'Cannot move down');
-                (game.x - 1, game.y + 1)
-            },
-        }
     }
 }
 

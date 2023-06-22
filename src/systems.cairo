@@ -1,3 +1,3 @@
 mod create;
 mod move;
-mod reveal;
+// mod reveal;

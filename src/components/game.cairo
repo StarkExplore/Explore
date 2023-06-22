@@ -24,5 +24,4 @@ struct Game {
     y: u16,
     level: u8,
     size: u16,
-    action: u8,
 }

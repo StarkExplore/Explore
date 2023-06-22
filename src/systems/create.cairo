@@ -6,8 +6,9 @@ mod Create {
     use box::BoxTrait;
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
+    use explore::components::item_count::ItemCount;
     use explore::components::tile::{Tile, TileTrait};
-    use explore::constants::{LEVEL, SIZE};
+    use explore::constants::{LEVEL, SIZE, DISARM_DEVICE};
 
     fn execute(ctx: Context, name: felt252) {
         let time = starknet::get_block_timestamp();
@@ -30,9 +31,14 @@ mod Create {
                     y: y,
                     level: LEVEL,
                     size: SIZE,
-                    action: 0_u8,
                 },
             )
+        );
+
+        // Do the initial item allocations
+        commands::set_entity(
+            (ctx.caller_account, DISARM_DEVICE).into(),
+            (ItemCount { count: 10_u8 }, )
         );
 
         // [Command] Delete all existing tiles
@@ -105,7 +111,6 @@ mod Test {
         assert(game.y == SIZE / 2_u16, 'wrong y');
         assert(game.level == LEVEL, 'wrong level');
         assert(game.size == SIZE, 'wrong size');
-        assert(game.action == 0_u8, 'wrong action');
 
         // [Check] Tile state
         let tile_id: Query = (caller, game.x, game.y).into();
