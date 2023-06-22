@@ -1,0 +1,12 @@
+[package]
+name = "explore_tui"
+author = "Team StarkExplore"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.3.5", features = ["derive"] }
+crossterm = "0.26.1"
+tui = "0.19.0"
