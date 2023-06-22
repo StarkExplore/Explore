@@ -3,7 +3,7 @@ use serde::Serde;
 use traits::Into;
 use poseidon::poseidon_hash_span;
 
-use explore::constants::BASE_SEED;
+use explore::constants::{BASE_SEED, START_SIZE};
 
 // @notice: This is the tile component used to know what is explored
 // and what is not. It also contains the number of dangers around.
@@ -115,13 +115,9 @@ fn uniform_random(seed: felt252, max: u128) -> u128 {
 
 // for a given level returns the size of the board and the number of mines
 fn level(level: u8) -> (u16, u16) {
-    if level == 0 {
-        (3, 2)
-    } else if level == 1 {
-        (4, 3)
-    } else {
-        (0, 0) // not a defined level
-    }
+    let size = START_SIZE + 2_u16 * level.into();
+    let bomb = size / 7 + level.into(); // (~ 15% + 1% per level)
+    (size, bomb)
 }
 
 #[test]
