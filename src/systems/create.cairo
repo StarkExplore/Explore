@@ -6,8 +6,8 @@ mod Create {
     use box::BoxTrait;
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
-    use explore::components::tile::{Tile, TileTrait};
-    use explore::constants::{LEVEL, SIZE};
+    use explore::components::tile::{Tile, TileTrait, level};
+    use explore::constants::{LEVEL};
 
     fn execute(ctx: Context, name: felt252) {
         let time = starknet::get_block_timestamp();
@@ -15,8 +15,9 @@ mod Create {
 
         // [Command] Create game
         let seed = info.transaction_hash;
-        let x: u16 = SIZE / 2_u16;
-        let y: u16 = SIZE / 2_u16;
+        let (start_size, start_n_mines) = level(LEVEL);
+        let x: u16 = start_size / 2_u16;
+        let y: u16 = start_size / 2_u16;
         commands::set_entity(
             ctx.caller_account.into(),
             (
@@ -29,7 +30,7 @@ mod Create {
                     x: x,
                     y: y,
                     level: LEVEL,
-                    size: SIZE,
+                    size: start_size,
                     action: 0_u8,
                 },
             )
@@ -38,12 +39,12 @@ mod Create {
         // [Command] Delete all existing tiles
         let mut idx: u16 = 0_u16;
         loop {
-            if idx >= SIZE * SIZE {
+            if idx >= start_size * start_size {
                 break ();
             }
 
-            let mut col: u16 = idx % SIZE;
-            let mut row: u16 = idx / SIZE;
+            let mut col: u16 = idx % start_size;
+            let mut row: u16 = idx / start_size;
 
             // [Error] This command has no effect
             // let mut tile_sk: Query = (ctx.caller_account, col, row).into();
@@ -59,7 +60,7 @@ mod Create {
         };
 
         // [Compute] Create a tile
-        let clue = TileTrait::get_clue(seed, LEVEL, SIZE, x, y);
+        let clue = TileTrait::get_clue(seed, LEVEL, start_size, x, y);
         let danger = TileTrait::is_danger(seed, LEVEL, x, y);
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
@@ -74,10 +75,10 @@ mod Test {
     use option::OptionTrait;
     use dojo_core::storage::query::Query;
     use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
-    use explore::components::{game::Game, tile::Tile};
+    use explore::components::{game::Game, tile::{Tile, level}};
     use explore::systems::{create::Create};
     use explore::tests::setup::{spawn_game, NAME};
-    use explore::constants::{LEVEL, SIZE};
+    use explore::constants::{LEVEL};
 
     #[test]
     #[available_gas(100000000)]
@@ -101,10 +102,10 @@ mod Test {
         assert(game.name == NAME, 'wrong name');
         assert(game.status, 'wrong status');
         assert(game.score == 1_u64, 'wrong score');
-        assert(game.x == SIZE / 2_u16, 'wrong x');
-        assert(game.y == SIZE / 2_u16, 'wrong y');
+        assert(game.x == 3 / 2_u16, 'wrong x');
+        assert(game.y == 3 / 2_u16, 'wrong y');
         assert(game.level == LEVEL, 'wrong level');
-        assert(game.size == SIZE, 'wrong size');
+        assert(game.size == 3, 'wrong size');
         assert(game.action == 0_u8, 'wrong action');
 
         // [Check] Tile state
@@ -114,8 +115,8 @@ mod Test {
         }.entity('Tile'.into(), tile_id.into(), 0, 0);
         let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
 
-        assert(tile.x == SIZE / 2_u16, 'wrong x');
-        assert(tile.y == SIZE / 2_u16, 'wrong y');
+        assert(tile.x == 3 / 2_u16, 'wrong x');
+        assert(tile.y == 3 / 2_u16, 'wrong y');
         assert(tile.explored == true, 'wrong explored');
         assert(tile.danger == true, 'wrong danger');
         assert(tile.clue == 1_u8, 'wrong clue');
