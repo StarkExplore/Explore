@@ -6,18 +6,19 @@ mod Create {
     use box::BoxTrait;
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
+    use explore::components::inventory::Inventory;
     use explore::components::tile::{Tile, TileTrait, level};
     use explore::constants::{LEVEL};
-
+    
     fn execute(ctx: Context, name: felt252) {
         let time = starknet::get_block_timestamp();
         let info = starknet::get_tx_info().unbox();
 
         // [Command] Create game
         let seed = info.transaction_hash;
-        let (start_size, start_n_mines) = level(LEVEL);
-        let x: u16 = start_size / 2_u16;
-        let y: u16 = start_size / 2_u16;
+        let (size, n_mines) = level(LEVEL);
+        let x: u16 = size / 2_u16;
+        let y: u16 = size / 2_u16;
         commands::set_entity(
             ctx.caller_account.into(),
             (
@@ -30,41 +31,40 @@ mod Create {
                     x: x,
                     y: y,
                     level: LEVEL,
-                    size: start_size,
-                    action: 0_u8,
+                    size: size,
                 },
+                Inventory {
+                    shield: false,
+                    kits: n_mines,
+                }
             )
         );
 
         // [Command] Delete all existing tiles
         let mut idx: u16 = 0_u16;
         loop {
-            if idx >= start_size * start_size {
+            if idx >= size * size {
                 break ();
             }
 
-            let mut col: u16 = idx % start_size;
-            let mut row: u16 = idx / start_size;
+            let mut col: u16 = idx % size;
+            let mut row: u16 = idx / size;
 
-            // [Error] This command has no effect
-            // let mut tile_sk: Query = (ctx.caller_account, col, row).into();
-            // commands::<Tile>::delete_entity(tile_sk);
-
-            // [Workaround] Set all entities to 0
-            commands::set_entity(
-                (ctx.caller_account, col, row).into(),
-                (Tile { explored: false, danger: false, clue: 0_u8, x: 0_u16, y: 0_u16 }, ),
-            );
+            // [Error] The command has no effect, then use ctx function
+            let mut tile_sk: Query = (ctx.caller_account, col, row).into();
+            ctx.world.delete_entity(ctx, 'Tile'.into(), tile_sk);
 
             idx += 1_u16;
         };
 
-        // [Compute] Create a tile
-        let clue = TileTrait::get_clue(seed, LEVEL, start_size, x, y);
-        let danger = TileTrait::is_danger(seed, LEVEL, x, y);
+        // [Command] Create a tile
+        let clue = TileTrait::get_clue(seed, LEVEL, size, x, y);
+        let mine = TileTrait::is_mine(seed, LEVEL, x, y);
+        let shield = TileTrait::is_shield(seed, LEVEL, x, y);
+        let kit = TileTrait::is_kit(seed, LEVEL, x, y);
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
-            (Tile { explored: true, danger: danger, clue: clue, x: x, y: y }, )
+            (Tile { explored: true, mine: mine, danger: false, shield: shield, kit: kit, clue: clue, x: x, y: y }, )
         );
     }
 }
@@ -77,14 +77,14 @@ mod Test {
     use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
     use explore::components::{game::Game, tile::{Tile, level}};
     use explore::systems::{create::Create};
-    use explore::tests::setup::{spawn_game, NAME};
+    use explore::tests::setup::{spawn_create_game, NAME};
     use explore::constants::{LEVEL};
 
     #[test]
     #[available_gas(100000000)]
     fn test_create_game() {
         // [Setup] World
-        let world_address = spawn_game();
+        let world_address = spawn_create_game();
         let caller = starknet::get_caller_address();
 
         // [Check] Number of games
@@ -106,7 +106,6 @@ mod Test {
         assert(game.y == 3 / 2_u16, 'wrong y');
         assert(game.level == LEVEL, 'wrong level');
         assert(game.size == 3, 'wrong size');
-        assert(game.action == 0_u8, 'wrong action');
 
         // [Check] Tile state
         let tile_id: Query = (caller, game.x, game.y).into();
@@ -119,6 +118,8 @@ mod Test {
         assert(tile.y == 3 / 2_u16, 'wrong y');
         assert(tile.explored == true, 'wrong explored');
         assert(tile.danger == false, 'wrong danger');
-        assert(tile.clue == 0_u8, 'wrong clue');
+        assert(tile.shield == false, 'wrong shield');
+        assert(tile.kit == false, 'wrong kit');
+        assert(tile.clue == 1_u8, 'wrong clue');
     }
 }
