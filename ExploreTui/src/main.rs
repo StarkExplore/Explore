@@ -4,11 +4,13 @@ use options::dojo_metadata_from_workspace;
 use scarb::core::Config;
 
 use dojo_world::world::WorldContract;
+use minesweeper::MinesweeperInterface;
 
 mod display;
-mod game_interface;
+mod minesweeper;
 mod movement;
 mod options;
+mod rpc_game_interface;
 
 /// Terminal interface for StarkExplore
 #[derive(Parser, Debug)]
@@ -64,7 +66,7 @@ async fn main() -> anyhow::Result<()> {
     let account = account.account(provider, env_metadata.as_ref()).await?;
     let world = WorldContract::new(world_address, &account);
 
-    let interface = game_interface::GameInterface::new(world);
+    let interface = rpc_game_interface::RpcGameInterface::new(world);
 
     let game = interface.get_game().await?;
     print!("{:?}", game);

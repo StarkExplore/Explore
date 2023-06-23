@@ -1714,6 +1714,7 @@ name = "explore_tui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "camino",
  "clap",
  "crossterm 0.26.1",
