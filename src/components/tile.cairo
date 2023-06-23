@@ -79,29 +79,30 @@ impl TileImpl of TileTrait {
 
 fn compute_danger(seed: felt252, level: u8, x: u16, y: u16) -> u8 {
     let (size, n_mines) = level(level);
-    is_mine(seed, n_mines, size * size, x + y * size)
+    is_object(seed, n_mines, size * size, x + y * size)
 }
 
-// Assuming a linear board (which can be wrapped into a square) this computes if there is a mine at the given position
-// using an algorithm that uniformly disperses the mines across the board.
-fn is_mine(seed: felt252, n_mines: u16, n_tiles: u16, index: u16) -> u8 {
-    assert(n_mines < n_tiles, 'too many mines');
+// @notice Compute if there is a object at the given position.
+// Using an algorithm that uniformly disperses the objects across the board.
+// @dev Assuming a linear board (which can be wrapped into a square).
+fn is_object(seed: felt252, n_objects: u16, n_tiles: u16, index: u16) -> u8 {
+    assert(n_objects < n_tiles, 'too many objects');
 
     let MULTIPLIER = 10000_u128; // like a percentage but larger to prevent underflow
-    let mut mines_to_place = n_mines;
+    let mut objects_to_place = n_objects;
     let mut i = 0;
     return loop {
-        if mines_to_place == 0 {
+        if objects_to_place == 0 {
             break 0_u8;
         }
         let rand = uniform_random(seed + i.into(), MULTIPLIER); // uniform random number between 0 and MULTIPLIER
-        let tile_mine_probability: u128 = mines_to_place.into() * MULTIPLIER / (n_tiles - i).into();
-        let tile_is_mine = if rand <= tile_mine_probability {
-            mines_to_place -= 1;
+        let tile_object_probability: u128 = objects_to_place.into() * MULTIPLIER / (n_tiles - i).into();
+        let tile_is_object = if rand <= tile_object_probability {
+            objects_to_place -= 1;
             1_u8
         } else { 0_u8 };
         if i == index {
-            break tile_is_mine;
+            break tile_is_object;
         }
         i+=1;
     };
@@ -115,7 +116,7 @@ fn uniform_random(seed: felt252, max: u128) -> u128 {
     hash.low % max
 }
 
-// for a given level returns the size of the board and the number of mines
+// @notice Return the size of the board and the number of mines for a given level
 fn level(level: u8) -> (u16, u16) {
     let size = START_SIZE + 2_u16 * level.into();
     let bomb = size / 7 + level.into(); // (~ 15% + 1% per level)
@@ -147,7 +148,7 @@ fn test_is_mine() {
     let mut seen_mines = 0_u8;
     let mut i = 0_u16;
     loop {
-        seen_mines += is_mine(seed, n_mines, n_tiles, i);
+        seen_mines += is_object(seed, n_mines, n_tiles, i);
         if i >= n_tiles - 1 {
             break ();
         }
