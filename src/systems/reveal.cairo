@@ -12,6 +12,9 @@ mod Reveal {
     use explore::components::tile::{Tile, TileTrait};
     use explore::constants::{SECURITY_OFFSET};
 
+    #[event]
+    fn ScoreUpdated(player: ContractAddress, score: u64) {}
+
     fn execute(ctx: Context) {
         // [Check] Game is not over
         let game = commands::<Game>::entity(ctx.caller_account.into());
@@ -40,6 +43,7 @@ mod Reveal {
         let danger = TileTrait::get_danger(game.seed, game.level, game.x, game.y);
         if danger != game.action {
             // [Compute] Updated game entity, game over
+            ScoreUpdated(ctx.caller_account.into(), game.score);
             commands::set_entity(
                 ctx.caller_account.into(),
                 (
@@ -57,7 +61,6 @@ mod Reveal {
                     },
                 )
             );
-
             return ();
         }
 
