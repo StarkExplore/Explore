@@ -43,7 +43,7 @@ mod Move {
         };
         assert(revealed, 'Current tile must be revealed');
 
-        // [Compute] Updated game entity
+        // [Compute] Update game entity
         let commit = next_action(action);
         let (x, y) = next_position(game, direction);
         let time = starknet::get_block_timestamp();

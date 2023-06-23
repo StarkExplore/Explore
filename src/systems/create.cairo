@@ -118,7 +118,7 @@ mod Test {
         assert(tile.x == 3 / 2_u16, 'wrong x');
         assert(tile.y == 3 / 2_u16, 'wrong y');
         assert(tile.explored == true, 'wrong explored');
-        assert(tile.danger == true, 'wrong danger');
-        assert(tile.clue == 1_u8, 'wrong clue');
+        assert(tile.danger == false, 'wrong danger');
+        assert(tile.clue == 0_u8, 'wrong clue');
     }
 }

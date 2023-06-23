@@ -25,7 +25,7 @@ fn test_play() {
 
     // [Execute] Move up-right and commit unsafe
     let mut calldata = array::ArrayTrait::<felt252>::new();
-    calldata.append(1);
+    calldata.append(0);
     calldata.append(3);
     world.execute('Move'.into(), calldata.span());
     world.execute('Reveal'.into(), empty.span());
@@ -53,9 +53,9 @@ fn test_play_revert_game_over() {
     let world_address = spawn_game();
     let world = IWorldDispatcher { contract_address: world_address };
 
-    // [Execute] Move up and commit safe
+    // [Execute] Move up and commit unsafe
     let mut calldata = array::ArrayTrait::<felt252>::new();
-    calldata.append(0);
+    calldata.append(1);
     calldata.append(2);
     let mut res = world.execute('Move'.into(), calldata.span());
 
