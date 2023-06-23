@@ -13,6 +13,9 @@ mod Reveal {
     use explore::components::tile::{Tile, TileTrait, level};
     use explore::constants::SECURITY_OFFSET;
 
+    #[event]
+    fn ScoreUpdated(player: ContractAddress, score: u64) {}
+
     fn execute(ctx: Context) {
         // [Check] Game is not over
         let game = commands::<Game>::entity(ctx.caller_account.into());
@@ -88,7 +91,6 @@ mod Reveal {
                     kits: inventory.kits,
                 };
             }
-
         }
 
         // [Compute] Tile is a shield
