@@ -1,3 +1,4 @@
+use crate::game_interface::GameInterface;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
@@ -12,15 +13,12 @@ use tui::{
     widgets::{Block, Borders, Cell, Row, Table, TableState},
     Frame, Terminal,
 };
-use crate::game_interface::GameInterface;
 
-struct App {
-
-}
+struct App {}
 
 impl App {
     pub fn new() -> Self {
-        App{}
+        App {}
     }
 }
 
@@ -67,6 +65,4 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     }
 }
 
-fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-
-}
+fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {}

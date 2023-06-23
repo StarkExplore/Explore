@@ -47,10 +47,17 @@ impl AccountOptions {
         let account_address = self.account_address(env_metadata)?;
         let signer = self.signer(env_metadata)?;
 
-        let chain_id =
-            provider.chain_id().await.with_context(|| "Failed to retrieve network chain id.")?;
+        let chain_id = provider
+            .chain_id()
+            .await
+            .with_context(|| "Failed to retrieve network chain id.")?;
 
-        Ok(SingleOwnerAccount::new(provider, signer, account_address, chain_id))
+        Ok(SingleOwnerAccount::new(
+            provider,
+            signer,
+            account_address,
+            chain_id,
+        ))
     }
 
     fn signer(&self, env_metadata: Option<&Value>) -> Result<LocalWallet> {
@@ -62,9 +69,9 @@ impl AccountOptions {
             })
             .or(std::env::var("DOJO_PRIVATE_KEY").ok().as_deref())
         {
-            return Ok(LocalWallet::from_signing_key(SigningKey::from_secret_scalar(
-                FieldElement::from_str(private_key)?,
-            )));
+            return Ok(LocalWallet::from_signing_key(
+                SigningKey::from_secret_scalar(FieldElement::from_str(private_key)?),
+            ));
         }
 
         if let Some(path) = &self.keystore_path {

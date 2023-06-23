@@ -1,10 +1,9 @@
+use crate::options::{account::AccountOptions, starknet::StarknetOptions, world::WorldOptions};
+use anyhow::Result;
 use clap::Parser;
+use dojo_world::world::WorldContract;
 use options::dojo_metadata_from_workspace;
 use scarb::core::Config;
-use std::{error::Error, path::PathBuf, env};
-use crate::options::{world::WorldOptions, starknet::StarknetOptions, account::AccountOptions};
-
-use dojo_world::world::WorldContract;
 
 mod game_display;
 mod game_interface;
@@ -32,15 +31,19 @@ pub struct Args {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<()> {
     let args = Args::parse();
-    
-    let Args { world, starknet, account, .. } = args;
+
+    let Args {
+        world,
+        starknet,
+        account,
+        ..
+    } = args;
 
     let manifest_path = scarb::ops::find_manifest_path(args.manifest_path.as_deref())?;
 
-    let config = Config::builder(manifest_path)
-        .build()?;
+    let config = Config::builder(manifest_path).build()?;
 
     let env_metadata = if config.manifest_path().exists() {
         let ws = scarb::ops::read_workspace(config.manifest_path(), &config)?;
@@ -62,5 +65,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let interface = game_interface::GameInterface::new(world);
 
-    game_display::start(interface)
+    interface.get_game().await?;
+
+    // game_display::start(interface)
 }
