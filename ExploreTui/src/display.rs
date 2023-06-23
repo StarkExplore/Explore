@@ -88,19 +88,60 @@ fn render_board<B: Backend>(f: &mut Frame<B>, canvas: Rect, board: &BoardState) 
     let widths = (0..board.size.0).map(|_| {Constraint::Min(2)}).collect::<Vec<Constraint>>();
 
     let minefield = Table::new(tiles)
-        // You can set the style of the entire Table.
         .style(Style::default().fg(Color::White))
-        // As any other widget, a Table can be wrapped in a Block.
-        .block(Block::default().borders(Borders::ALL).title("Table"))
-        // Columns widths are constrained in the same way as Layout...
         .widths(&widths)
-        // ...and they can be separated by a fixed spacing.q
         .column_spacing(0);
 
     f.render_widget(minefield, canvas);
 }
 
-// Render the entire app
+fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
+    let instructions_text = "
+    1: Move down left
+    2: Move down
+    3: Move down right
+    4: Move left
+    6: Move right
+    7: Move up left
+    8: Move up
+    9: Move up right
+    
+    Q: Quit the game
+    
+        ";
+    
+        let instructions = Paragraph::new(instructions_text)
+            .block(Block::default().title("Controls").borders(Borders::ALL))
+            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+        f.render_widget(instructions, canvas);
+
+}
+
+fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, board: &BoardState) {
+    let score_text = "Mines: 0";
+
+    let score = Paragraph::new(score_text)
+            .block(Block::default().title("Score").borders(Borders::ALL))
+            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+        f.render_widget(score, canvas);
+}
+
+
+// split a rect into equal parts
+fn split(r: Rect, into: usize, direction: Direction) -> Vec<Rect> {
+    Layout::default()
+        .direction(direction)
+        .constraints(
+            (0..into).map(|_| Constraint::Ratio(1, into as u32)).collect::<Vec<Constraint>>().as_ref()
+        )
+        .split(r)
+}
+
+// Render the entire
 fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -113,33 +154,17 @@ fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         )
         .split(f.size());
 
-    
+    let board_chunk = split(split(chunks[0], 3, Direction::Vertical)[1], 3, Direction::Horizontal)[1];
+    let sidebar = split(chunks[1], 2, Direction::Vertical);
+    let score_chunk = sidebar[0];
+    let instructions_chunk = sidebar[1];
 
-    let controls = "
-1: Move down left
-2: Move down
-3: Move down right
-4: Move left
-6: Move right
-7: Move up left
-8: Move up
-9: Move up right
 
-Q: Quit the game
+    app.board.size = (5, 5);
+    app.board.player_position = (3,3);
 
-    ";
-
-    let controls = Paragraph::new(controls)
-        .block(Block::default().title("Controls").borders(Borders::ALL))
-        .style(Style::default().fg(Color::White).bg(Color::Black))
-        .alignment(Alignment::Left)
-        .wrap(Wrap { trim: true });
-
-        app.board.size = (5, 7);
-        app.board.player_position = (3,3);
-
-    render_board(f, chunks[0], &app.board);
-    f.render_widget(controls, chunks[1]);
-
+    render_board(f, board_chunk, &app.board);
+    render_instructions(f, instructions_chunk);
+    render_score(f, score_chunk, &app.board);
 
 }
