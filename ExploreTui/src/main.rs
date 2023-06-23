@@ -2,7 +2,6 @@ use crate::options::{account::AccountOptions, starknet::StarknetOptions, world::
 use clap::Parser;
 use options::dojo_metadata_from_workspace;
 use scarb::core::Config;
-use std::{env, error::Error, path::PathBuf};
 
 use dojo_world::world::WorldContract;
 
@@ -66,8 +65,8 @@ async fn main() -> anyhow::Result<()> {
 
     let interface = game_interface::GameInterface::new(world);
 
-    interface.get_game().await?;
-
+    let game = interface.get_game().await?;
+    print!("{:?}", game);
     Ok(())
     // game_display::start(interface)
 }
