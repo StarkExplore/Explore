@@ -95,7 +95,8 @@ fn is_object(seed: felt252, n_objects: u16, n_tiles: u16, index: u16) -> u8 {
         if objects_to_place == 0 {
             break 0_u8;
         }
-        let rand = uniform_random(seed + i.into(), MULTIPLIER); // uniform random number between 0 and MULTIPLIER
+        // [Compute] Uniform random number between 0 and MULTIPLIER
+        let rand = uniform_random(seed + i.into(), MULTIPLIER);
         let tile_object_probability: u128 = objects_to_place.into() * MULTIPLIER / (n_tiles - i).into();
         let tile_is_object = if rand <= tile_object_probability {
             objects_to_place -= 1;
