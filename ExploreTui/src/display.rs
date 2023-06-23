@@ -69,8 +69,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     }
 }
 
+// Render a board onto the given rectangle with the frame
 fn render_board<B: Backend>(f: &mut Frame<B>, canvas: Rect, board: &BoardState) {
-
     let tiles: Vec<Row> = (0..board.size.1).map(|i| {
         Row::new((0..board.size.0).map(|j| {
             if board.player_position == (i, j) {
@@ -100,6 +100,7 @@ fn render_board<B: Backend>(f: &mut Frame<B>, canvas: Rect, board: &BoardState) 
     f.render_widget(minefield, canvas);
 }
 
+// Render the entire app
 fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
