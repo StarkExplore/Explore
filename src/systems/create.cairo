@@ -7,12 +7,21 @@ mod Create {
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
     use explore::components::tile::{Tile, TileTrait, level};
+    use explore::components::achievements::{Achievements, AchievementsTrait};
     use explore::constants::{LEVEL};
 
     fn execute(ctx: Context, name: felt252) {
         let time = starknet::get_block_timestamp();
         let info = starknet::get_tx_info().unbox();
-
+        //get achievments from address
+        let achievements = commands::<Achievements>::get_entity(ctx.caller_account.into());
+        if(!achievements.player_address)
+        {
+            let achievements = AchievmentsTrait::create(ctx.caller_account.into());
+            commands::set_entity(ctx.caller_account_into(), (
+                Achievements : achievements
+            ))
+        }
         // [Command] Create game
         let seed = info.transaction_hash;
         let (start_size, start_n_mines) = level(LEVEL);
