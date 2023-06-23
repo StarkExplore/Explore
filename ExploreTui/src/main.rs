@@ -1,9 +1,10 @@
 use crate::options::{account::AccountOptions, starknet::StarknetOptions, world::WorldOptions};
-use anyhow::Result;
 use clap::Parser;
-use dojo_world::world::WorldContract;
 use options::dojo_metadata_from_workspace;
 use scarb::core::Config;
+use std::{env, error::Error, path::PathBuf};
+
+use dojo_world::world::WorldContract;
 
 mod game_display;
 mod game_interface;
@@ -31,7 +32,7 @@ pub struct Args {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let Args {
@@ -67,5 +68,6 @@ async fn main() -> Result<()> {
 
     interface.get_game().await?;
 
+    Ok(())
     // game_display::start(interface)
 }
