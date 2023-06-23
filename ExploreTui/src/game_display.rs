@@ -3,6 +3,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use starknet::accounts::ConnectedAccount;
 use std::{error::Error, io};
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -11,6 +12,7 @@ use tui::{
     widgets::{Block, Borders, Cell, Row, Table, TableState},
     Frame, Terminal,
 };
+use crate::game_interface::GameInterface;
 
 struct App {
 
@@ -22,7 +24,7 @@ impl App {
     }
 }
 
-pub fn start() -> Result<(), Box<dyn Error>> {
+pub fn start(interface: GameInterface) -> Result<(), Box<dyn Error>> {
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
