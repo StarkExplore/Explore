@@ -56,10 +56,8 @@ mod Defuse {
                     y: game.y,
                     level: game.level,
                     size: game.size,
-                },
-                Inventory {
-                    shield: inventory.shield,
-                    kits: inventory.kits - 1_u16, // Remove 1 kit
+                    }, Inventory {
+                    shield: inventory.shield, kits: inventory.kits - 1_u16, // Remove 1 kit 
                 }
             )
         );
@@ -71,7 +69,18 @@ mod Defuse {
         let kit = TileTrait::is_kit(game.seed, game.level, x, y);
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
-            (Tile { explored: true, mine: mine, danger: false, shield: shield, kit: kit, clue: clue, x: x, y: y }, )
+            (
+                Tile {
+                    explored: true,
+                    mine: mine,
+                    danger: false,
+                    shield: shield,
+                    kit: kit,
+                    clue: clue,
+                    x: x,
+                    y: y
+                },
+            )
         );
         return ();
     }
@@ -110,7 +119,8 @@ mod Test {
         let mut finals = IWorldDispatcher {
             contract_address: world_address
         }.entity('Inventory'.into(), caller.into(), 0, 0);
-        let final = serde::Serde::<Inventory>::deserialize(ref finals).expect('deserialization failed');
+        let final = serde::Serde::<Inventory>::deserialize(ref finals)
+            .expect('deserialization failed');
 
         // [Check] Move
         assert(final.kits == initial.kits - 1, 'Defuse left failed');

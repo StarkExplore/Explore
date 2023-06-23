@@ -121,15 +121,19 @@ fn is_object(seed: felt252, n_objects: u16, n_tiles: u16, index: u16) -> u8 {
         }
         // [Compute] Uniform random number between 0 and MULTIPLIER
         let rand = uniform_random(seed + i.into(), MULTIPLIER);
-        let tile_object_probability: u128 = objects_to_place.into() * MULTIPLIER / (n_tiles - i).into();
+        let tile_object_probability: u128 = objects_to_place.into()
+            * MULTIPLIER
+            / (n_tiles - i).into();
         let tile_is_object = if rand <= tile_object_probability {
             objects_to_place -= 1;
             1_u8
-        } else { 0_u8 };
+        } else {
+            0_u8
+        };
         if i == index {
             break tile_is_object;
         }
-        i+=1;
+        i += 1;
     };
 }
 
@@ -194,7 +198,7 @@ fn test_is_object() {
         if i >= n_tiles - 1 {
             break ();
         }
-        i+=1;
+        i += 1;
     };
     assert(seen_objects.into() == n_objects, 'incorrect number objects');
 }

@@ -56,10 +56,8 @@ mod Reveal {
 
         // [Check] Tile is dangerous
         if tile.danger {
-
             // [Check] No shield
             if !inventory.shield {
-
                 // [Compute] Updated game entity, game over
                 commands::set_entity(
                     ctx.caller_account.into(),
@@ -74,22 +72,15 @@ mod Reveal {
                             y: game.y,
                             level: game.level,
                             size: game.size,
-                        },
-                        Inventory {
-                            shield: inventory.shield,
-                            kits: inventory.kits,
+                            }, Inventory {
+                            shield: inventory.shield, kits: inventory.kits, 
                         }
                     )
                 );
                 return ();
-
             } else {
-
                 // [Compute] Remove shield
-                let inventory = Inventory {
-                    shield: false,
-                    kits: inventory.kits,
-                };
+                let inventory = Inventory { shield: false, kits: inventory.kits,  };
             }
         }
 
@@ -111,7 +102,18 @@ mod Reveal {
         // [Command] Create the tile entity
         commands::set_entity(
             (ctx.caller_account, game.x, game.y).into(),
-            (Tile { explored: true, mine: tile.mine, danger: tile.danger, shield: tile.shield, kit: tile.kit, clue: tile.clue, x: tile.x, y: tile.y }, ),
+            (
+                Tile {
+                    explored: true,
+                    mine: tile.mine,
+                    danger: tile.danger,
+                    shield: tile.shield,
+                    kit: tile.kit,
+                    clue: tile.clue,
+                    x: tile.x,
+                    y: tile.y
+                },
+            ),
         );
 
         // [Check] Max score not reached
@@ -131,10 +133,8 @@ mod Reveal {
                         y: game.y,
                         level: game.level,
                         size: game.size,
-                    },
-                    Inventory {
-                        shield: shield,
-                        kits: inventory.kits + add_kit,
+                        }, Inventory {
+                        shield: shield, kits: inventory.kits + add_kit, 
                     }
                 )
             );
@@ -160,10 +160,9 @@ mod Reveal {
                     y: y,
                     level: level, // level up
                     size: size,
-                },
-                Inventory {
-                    shield: shield,  // Set to true if Tile is shield
-                    kits: n_mines,
+                    }, Inventory {
+                    shield: shield, // Set to true if Tile is shield
+                     kits: n_mines,
                 }
             )
         );
@@ -192,7 +191,18 @@ mod Reveal {
         let kit = TileTrait::is_kit(seed, level, x, y);
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
-            (Tile { explored: true, mine: mine, danger: mine, shield: shield, kit: kit, clue: clue, x: x, y: y }, )
+            (
+                Tile {
+                    explored: true,
+                    mine: mine,
+                    danger: mine,
+                    shield: shield,
+                    kit: kit,
+                    clue: clue,
+                    x: x,
+                    y: y
+                },
+            )
         );
     }
 }

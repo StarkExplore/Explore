@@ -9,7 +9,7 @@ mod Create {
     use explore::components::inventory::Inventory;
     use explore::components::tile::{Tile, TileTrait, level};
     use explore::constants::{LEVEL};
-    
+
     fn execute(ctx: Context, name: felt252) {
         let time = starknet::get_block_timestamp();
         let info = starknet::get_tx_info().unbox();
@@ -32,10 +32,8 @@ mod Create {
                     y: y,
                     level: LEVEL,
                     size: size,
-                },
-                Inventory {
-                    shield: false,
-                    kits: n_mines,
+                    }, Inventory {
+                    shield: false, kits: n_mines, 
                 }
             )
         );
@@ -64,7 +62,18 @@ mod Create {
         let kit = TileTrait::is_kit(seed, LEVEL, x, y);
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
-            (Tile { explored: true, mine: mine, danger: false, shield: shield, kit: kit, clue: clue, x: x, y: y }, )
+            (
+                Tile {
+                    explored: true,
+                    mine: mine,
+                    danger: false,
+                    shield: shield,
+                    kit: kit,
+                    clue: clue,
+                    x: x,
+                    y: y
+                },
+            )
         );
     }
 }

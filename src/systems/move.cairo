@@ -40,10 +40,8 @@ mod Move {
                     y: y,
                     level: game.level,
                     size: game.size,
-                },
-                Inventory {
-                    shield: inventory.shield,
-                    kits: inventory.kits,
+                    }, Inventory {
+                    shield: inventory.shield, kits: inventory.kits, 
                 }
             )
         );
