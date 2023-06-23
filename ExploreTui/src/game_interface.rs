@@ -1,3 +1,4 @@
+use crate::movement::{Action, Direction};
 use anyhow::Result;
 use dojo_world::world::WorldContract;
 use starknet::core::types::{BlockId, BlockTag, FieldElement};
@@ -17,6 +18,25 @@ pub struct GameInterface<'a> {
 impl<'a> GameInterface<'a> {
     pub fn new(world: WorldContract<'a, LocalAccount>) -> Self {
         GameInterface { world }
+    }
+
+    // gets the game for the current account
+    pub async fn get_game(&self) -> Result<Vec<FieldElement>> {
+        self.get_component_raw("Game", vec![self.world.address.into()])
+            .await
+    }
+
+    pub async fn create_game(&self, name: FieldElement) -> Result<FieldElement> {
+        self.execute_system_raw("Move", vec![name]).await
+    }
+
+    pub async fn make_move(&self, action: Action, direction: Direction) -> Result<FieldElement> {
+        self.execute_system_raw("Move", vec![action.into(), direction.into()])
+            .await
+    }
+
+    pub async fn reveal(&self) -> Result<FieldElement> {
+        self.execute_system_raw("Reveal", vec![]).await
     }
 
     // return the raw bytes of the entity for a given component given its name and entity key
@@ -41,15 +61,5 @@ impl<'a> GameInterface<'a> {
     ) -> Result<FieldElement> {
         let res = self.world.execute(&system, calldata).await?;
         Ok(res.transaction_hash)
-    }
-
-    // gets the game for the current account
-    pub async fn get_game(&self) -> Result<Vec<FieldElement>> {
-        self.get_component_raw("Game", vec![self.world.address.into()])
-            .await
-    }
-
-    pub async fn create_game(&self, name: FieldElement) -> Result<FieldElement> {
-        self.execute_system_raw("Move", vec![name]).await
     }
 }

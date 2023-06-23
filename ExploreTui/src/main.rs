@@ -5,8 +5,9 @@ use scarb::core::Config;
 
 use dojo_world::world::WorldContract;
 
-mod game_display;
+mod display;
 mod game_interface;
+mod movement;
 mod options;
 
 /// Terminal interface for StarkExplore
