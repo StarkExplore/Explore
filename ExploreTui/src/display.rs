@@ -7,9 +7,6 @@ use crossterm::{
 use std::{error::Error, io};
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Layout},
-    style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Cell, Row, Table, TableState},
     Frame, Terminal,
 };
 
@@ -21,7 +18,7 @@ impl App {
     }
 }
 
-pub fn start(interface: impl MinesweeperInterface) -> Result<(), Box<dyn Error>> {
+pub fn start(_interface: impl MinesweeperInterface) -> Result<(), Box<dyn Error>> {
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -64,4 +61,4 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
     }
 }
 
-fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {}
+fn renderer<B: Backend>(_f: &mut Frame<B>, _app: &mut App) {}

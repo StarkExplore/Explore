@@ -43,7 +43,7 @@ impl<'a> RpcGameInterface<'a> {
         system: &str,
         calldata: Vec<FieldElement>,
     ) -> Result<FieldElement> {
-        let res = self.world.execute(&system, calldata).await?;
+        let res = self.world.execute(system, calldata).await?;
         Ok(res.transaction_hash)
     }
 }
@@ -52,12 +52,12 @@ impl<'a> RpcGameInterface<'a> {
 impl<'a> MinesweeperInterface for RpcGameInterface<'a> {
     // gets the game for the current account
     async fn get_game(&self) -> Result<Vec<FieldElement>> {
-        self.get_component_raw("Game", vec![self.world.account.address().into()])
+        self.get_component_raw("Game", vec![self.world.account.address()])
             .await
     }
 
     async fn get_tile(&self, x: FieldElement, y: FieldElement) -> Result<Vec<FieldElement>> {
-        self.get_component_raw("Tile", vec![self.world.account.address().into(), x, y])
+        self.get_component_raw("Tile", vec![self.world.account.address(), x, y])
             .await
     }
 

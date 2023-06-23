@@ -10,9 +10,9 @@ pub enum Direction {
     DownLeft,
 }
 
-impl Into<FieldElement> for Direction {
-    fn into(self) -> FieldElement {
-        match self {
+impl From<Direction> for FieldElement {
+    fn from(val: Direction) -> Self {
+        match val {
             Direction::Left => 0_u8.into(),
             Direction::UpLeft => 1_u8.into(),
             Direction::Up => 2_u8.into(),
@@ -30,9 +30,9 @@ pub enum Action {
     Unsafe,
 }
 
-impl Into<FieldElement> for Action {
-    fn into(self) -> FieldElement {
-        match self {
+impl From<Action> for FieldElement {
+    fn from(val: Action) -> Self {
+        match val {
             Action::Safe => 0_u8.into(),
             Action::Unsafe => 1_u8.into(),
         }
