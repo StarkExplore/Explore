@@ -69,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
 
     let interface = rpc_game_interface::RpcGameInterface::new(world);
 
-    let game = interface.get_game().await?;
+    let _game = interface.get_game().await?;
 
     display::start(interface).await?;
 
