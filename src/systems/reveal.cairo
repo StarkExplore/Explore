@@ -8,6 +8,7 @@ mod Reveal {
     use debug::PrintTrait;
     use starknet::ContractAddress;
 
+    use explore::components::achievements::{Achievements, AchievementsTrait};
     use explore::components::game::Game;
     use explore::components::tile::{Tile, TileTrait};
     use explore::constants::{SECURITY_OFFSET};
@@ -19,6 +20,9 @@ mod Reveal {
         // [Check] Game is not over
         let game = commands::<Game>::entity(ctx.caller_account.into());
         assert(game.status, 'Game is finished');
+
+        // Get the achievements for the project
+        let achievements = commands::<Achievements>::entity(ctx.caller_account.into());
 
         // [Check] Two moves in a single block security
         let time = starknet::get_block_timestamp();
@@ -43,6 +47,9 @@ mod Reveal {
         let danger = TileTrait::get_danger(game.seed, game.level, game.x, game.y);
         if danger != game.action {
             // [Compute] Updated game entity, game over
+            //TODO incrémenter morts sur le niveau
+            //if(achievements.)
+
             ScoreUpdated(ctx.caller_account.into(), game.score);
             commands::set_entity(
                 ctx.caller_account.into(),
@@ -98,6 +105,10 @@ mod Reveal {
         }
 
         // [Command] Update Game, level-up and reset score
+        //TODO checker achievments
+        
+
+
         let seed = starknet::get_tx_info().unbox().transaction_hash;
         let size: u16 = game.size + 2_u16;
         let x: u16 = size / 2_u16;
