@@ -13,15 +13,29 @@ mod Create {
     fn execute(ctx: Context, name: felt252) {
         let time = starknet::get_block_timestamp();
         let info = starknet::get_tx_info().unbox();
-        //get achievments from address
-        let achievements = commands::<Achievements>::get_entity(ctx.caller_account.into());
-        if(!achievements.player_address)
+
+        //get Achievements from address and create if not exist
+        let achievements = commands::<Achievements>::try_entity(ctx.caller_account.into());
+        let created = match achievements {
+            Option::Some(achievements) => {
+                true
+            },
+            Option::None(_) => {
+                false
+            },
+        };
+
+        if(!created)
         {
-            let achievements = AchievmentsTrait::create(ctx.caller_account.into());
-            commands::set_entity(ctx.caller_account_into(), (
-                Achievements : achievements
+                let achievements = AchievementsTrait::create(ctx.caller_account.into());
+                commands::set_entity(ctx.caller_account.into(), (
+                Achievements {
+                    player_address: achievements.player_address,
+                    achievements: achievements.achievements,
+                },
             ))
         }
+
         // [Command] Create game
         let seed = info.transaction_hash;
         let (start_size, start_n_mines) = level(LEVEL);

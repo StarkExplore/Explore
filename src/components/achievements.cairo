@@ -1,43 +1,46 @@
-use std::collections::HashMap;
 use array::ArrayTrait;
 
 
 #[derive(Component, Copy, Drop, Serde)]
 struct Achievement {
-    name: String,
-    description: String,
+    name: felt252,
+    description: felt252,
     aquired: bool,
 }
 
-#[derive(Component, Copy, Serde)]
+#[derive(Component, Serde, Drop)]
 struct Achievements {
-    player_address: String,
-    achievements: HashMap<String, Achievement>,
+    player_address: felt252,
+    achievements: Array<Achievement>,
 }
 
-trait AchievmentsTrait{
-    fn get(address: String) -> Achievements;
-    fn create(address: String) -> Achievements;
+trait AchievementsTrait{
+    // fn get(address: felt252) -> Achievements;
+    fn create(address: felt252) -> Achievements;
+    fn createLevelUpAchievement(level: felt252) -> Achievement;
+    fn createPerfectAchievement(level: felt252) -> Achievement;
+    fn createLooserAchievement(level: felt252) -> Achievement;
 }
 
-impl AchievmentsImpl of AchievmentsTrait {
-    fn get(address: String) -> Achievements {
-        // let mut achievements = HashMap::new();
-        // let achievement = Achievement {
-        //     name: "First".to_string(),
-        //     description: "First achievement".to_string(),
-        //     aquired: false,
-        // };
-        // achievements.insert("First".to_string(), achievement);
-        // Achievements {
-        //     player_address: address,
-        //     achievements: achievements,
-        // }
-    }
+impl AchievementsImpl of AchievementsTrait {
+    // fn get(address: felt252) -> Achievements {
+    //     // let mut achievements = HashMap::new();
+    //     // let achievement = Achievement {
+    //     //     name: "First".to_felt252(),
+    //     //     description: "First achievement".to_felt252(),
+    //     //     aquired: false,
+    //     // };
+    //     // achievements.insert("First".to_felt252(), achievement);
+    //     // Achievements {
+    //     //     player_address: address,
+    //     //     achievements: achievements,
+    //     // }
+    // }
 
-    fn createLevelUpAchievement(level: u8) -> Achievement {
-        let name = format!('Level {}', level);
-        let description = format!('Level {} is completed', level);
+    fn createLevelUpAchievement(level: felt252) -> Achievement {
+        let name : felt252 = ('Level '+ level);
+
+        let description = 'Level' + level +' is completed';
         Achievement {
             name: name,
             description: description,
@@ -45,9 +48,9 @@ impl AchievmentsImpl of AchievmentsTrait {
         }
     }
 
-    fn createPerfectAchievement(level: u8) -> Achievement {
-        let name = format!('Perfect {}', level);
-        let description = format!('Perfect level {}!', level);
+    fn createPerfectAchievement(level: felt252) -> Achievement {
+        let name = ('Perfect ' + level);
+        let description = ('Perfect level ' + level + '!');
         Achievement {
             name: name,
             description: description,
@@ -55,9 +58,9 @@ impl AchievmentsImpl of AchievmentsTrait {
         }
     }
 
-    fn createLooserAchievement(level: u8) -> Achievement {
-        let name = format!('Looser {}', level);
-        let description = format!('5 loose on level {}!', level);
+    fn createLooserAchievement(level: felt252) -> Achievement {
+        let name = ('Looser ' + level);
+        let description = ('5 loose on level ' + level + '!');
         Achievement {
             name: name,
             description: description,
@@ -65,17 +68,17 @@ impl AchievmentsImpl of AchievmentsTrait {
         }
     }
 
-    fn create(address: String) -> Achievements {
-        let mut achievements = HashMap::new();
-        achievements.insert('Level 1', createLevelUpAchievement(1));
-        achievements.insert('Level 2', createLevelUpAchievement(2));
-        achievements.insert('Level 3', createLevelUpAchievement(3));
-        achievements.insert('Perfect1', createPerfectAchievement(1));
-        achievements.insert('Perfect2', createPerfectAchievement(2));
-        achievements.insert('Perfect3', createPerfectAchievement(3));
-        achievements.insert('Looser1', createLooserAchievement(1));
-        achievements.insert('Looser2', createLooserAchievement(2));
-        achievements.insert('Looser3', createLooserAchievement(3));
+    fn create(address: felt252) -> Achievements {
+        let mut achievements = ArrayTrait::<Achievement>::new();
+        achievements.append(AchievementsTrait::createLevelUpAchievement(1));
+        achievements.append(AchievementsTrait::createLevelUpAchievement(2));
+        achievements.append(AchievementsTrait::createLevelUpAchievement(3));
+        achievements.append(AchievementsTrait::createPerfectAchievement(1));
+        achievements.append(AchievementsTrait::createPerfectAchievement(2));
+        achievements.append(AchievementsTrait::createPerfectAchievement(3));
+        achievements.append(AchievementsTrait::createLooserAchievement(1));
+        achievements.append(AchievementsTrait::createLooserAchievement(2));
+        achievements.append(AchievementsTrait::createLooserAchievement(3));
         
         Achievements {
             player_address: address,
