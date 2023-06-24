@@ -6,6 +6,7 @@ use crossterm::{
 };
 use anyhow::Result;
 use crate::components::{Game, Tile};
+use crate::movement;
 use std::{error::Error, io};
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -17,15 +18,35 @@ use tui::{
 };
 
 #[derive(Default)]
-struct App {
+struct App<I> {
     game: Game,
     tiles: Vec<Tile>,
+    interface: I,
 }
 
 
-impl App {
-    pub fn new() -> Self {
-        App::default()
+impl<I: MinesweeperInterface> App<I> {
+    pub fn new(interface: I) -> Self {
+        Self {
+            interface,
+            game: Game::default(),
+            tiles: Vec::new(),
+        }
+    }
+
+    pub async fn sync(&mut self) -> Result<()> {
+        self.game = self.interface.get_game().await?;
+        Ok(())
+    }
+
+    pub async fn make_move(&mut self, action: movement::Action, direction: movement::Direction) -> Result<()> {
+        self.interface.make_move(action, direction).await?;
+        self.sync().await
+    }
+
+    pub async fn reveal(&mut self) -> Result<()> {
+        self.interface.reveal().await?;
+        self.sync().await
     }
 }
 
@@ -38,8 +59,8 @@ pub async fn start(interface: impl MinesweeperInterface) -> Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // create app and run it
-    let app = App::new();
-    run_app(&mut terminal, app, interface).await?;
+    let app = App::new(interface);
+    run_app(&mut terminal, app).await?;
 
     // restore terminal
     disable_raw_mode()?;
@@ -53,9 +74,9 @@ pub async fn start(interface: impl MinesweeperInterface) -> Result<()> {
     Ok(())
 }
 
-async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, interface: impl MinesweeperInterface) -> Result<()> {
+async fn run_app<B: Backend, I: MinesweeperInterface>(terminal: &mut Terminal<B>, mut app: App<I>) -> Result<()> {
 
-    app.game = interface.get_game().await?;
+    app.sync().await?;
 
     loop {
         terminal.draw(|f| renderer(f, &mut app))?;
@@ -63,7 +84,16 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, interface
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
-                // KeyCode::Down => app.next(),
+                KeyCode::Char('1') => app.make_move(movement::Action::Safe, movement::Direction::DownLeft).await?,
+                KeyCode::Char('2') => app.make_move(movement::Action::Safe, movement::Direction::Down).await?,
+                KeyCode::Char('3') => app.make_move(movement::Action::Safe, movement::Direction::DownRight).await?,
+                KeyCode::Char('4') => app.make_move(movement::Action::Safe, movement::Direction::Left).await?,
+                KeyCode::Char('5') => app.make_move(movement::Action::Safe, movement::Direction::Right).await?,
+                KeyCode::Char('6') => app.make_move(movement::Action::Safe, movement::Direction::UpLeft).await?,
+                KeyCode::Char('7') => app.make_move(movement::Action::Safe, movement::Direction::Up).await?,
+                KeyCode::Char('8') => app.make_move(movement::Action::Safe, movement::Direction::UpRight).await?,
+                KeyCode::Char('r') => app.reveal().await?,
+
                 // KeyCode::Up => app.previous(),
                 _ => {}
             }
@@ -73,8 +103,8 @@ async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, interface
 
 // Render a board onto the given rectangle with the frame
 fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &[Tile]) {
-    let tiles: Vec<Row> = (0..game.size).map(|i| {
-        Row::new((0..game.size).map(|j| {
+    let tiles: Vec<Row> = (0..game.size).map(|j| {
+        Row::new((0..game.size).map(|i| {
             if (game.x, game.y) == (i, j) {
                 return Cell::from("👨");
             }
@@ -113,7 +143,8 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     7: Move up left
     8: Move up
     9: Move up right
-    
+
+    R: Reval current tile
     Q: Quit the game
     
         ";
@@ -155,7 +186,7 @@ fn split(r: Rect, into: usize, direction: Direction) -> Vec<Rect> {
 }
 
 // Render the entire
-fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {
+fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
