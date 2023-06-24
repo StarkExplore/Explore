@@ -1,0 +1,22 @@
+[package]
+name = "explore_tui"
+author = "Team StarkExplore"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.3.5", features = ["derive"] }
+crossterm = "0.26.1"
+tui = "0.19.0"
+scarb = { git = "https://github.com/software-mansion/scarb", rev = "0aa0f97b89a2e6f38f3b005cad2817dcaee7bf51" }
+dojo-world = { git = "https://github.com/dojoengine/dojo", rev = "f026a99d21d3b4259f458d11554ffd861615fdda" }
+sozo = { git = "https://github.com/dojoengine/dojo", rev = "f026a99d21d3b4259f458d11554ffd861615fdda" }
+
+starknet = "0.3.0"
+toml = "0.7.4"
+anyhow = "1.0.71"
+url = "2.4.0"
+tokio = { version = "1.28.2", features = ["rt", "macros"] }
+camino = "1.1.4"
+async-trait = "0.1.68"
+
