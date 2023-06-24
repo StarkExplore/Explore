@@ -62,6 +62,11 @@ impl<I: MinesweeperInterface> App<I> {
             self.sync().await
         }
     }
+
+    pub async fn new_game(&mut self) -> Result<()> {
+        self.interface.new_game().await?;
+        self.sync().await
+    }
 }
 
 pub async fn start(interface: impl MinesweeperInterface) -> Result<()> {
@@ -98,6 +103,7 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(terminal: &mut Terminal<B>
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
+                KeyCode::Char('n') => app.new_game().await?,
                 KeyCode::Char('1') => app.make_move(movement::Action::Safe, movement::Direction::DownLeft).await?,
                 KeyCode::Char('2') => app.make_move(movement::Action::Safe, movement::Direction::Down).await?,
                 KeyCode::Char('3') => app.make_move(movement::Action::Safe, movement::Direction::DownRight).await?,
@@ -172,6 +178,8 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     8: Move up right
 
     R: Reval current tile
+
+    N: Start a new game
     Q: Quit the game
     
         ";

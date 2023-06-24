@@ -11,4 +11,5 @@ pub trait MinesweeperInterface {
     async fn create_game(&self, name: FieldElement) -> Result<FieldElement>;
     async fn make_move(&self, action: Action, direction: Direction) -> Result<FieldElement>;
     async fn reveal(&self) -> Result<FieldElement>;
+    async fn new_game(&self) -> Result<FieldElement>;
 }

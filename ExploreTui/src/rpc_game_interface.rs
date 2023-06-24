@@ -47,6 +47,7 @@ impl<'a> RpcGameInterface<'a> {
         let res = self.world.execute(system, calldata).await?;
         Ok(res.transaction_hash)
     }
+    
 }
 
 #[async_trait]
@@ -73,5 +74,9 @@ impl<'a> MinesweeperInterface for RpcGameInterface<'a> {
 
     async fn reveal(&self) -> Result<FieldElement> {
         self.execute_system_raw("Reveal", vec![]).await
+    }
+
+    async fn new_game(&self) -> Result<FieldElement> {
+        self.execute_system_raw("Create", vec![FieldElement::from_byte_slice_be(b"Pragma Hackathon".as_slice()).unwrap()]).await
     }
 }
