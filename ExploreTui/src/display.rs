@@ -131,7 +131,7 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
 
     let mut s = String::new();
     // top edge
-    for _ in 0..game.size+1 {
+    for _ in 0..game.size {
         s.push_str("────")
     }
     s.push('\n');
@@ -140,26 +140,28 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
     for j in 0..game.size {
         s.push('│');
         for i in 0..game.size {
-            let tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
+            let mut tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
                 Some(tile) => {
                     if tile.explored {
-                        format!(" {} ", tile.clue)
-                    } else if tile.danger {
-                        String::from(" 🚩 ")
+                        format!("{}", tile.clue)
                     } else {
-                        String::from("   ")
+                        String::from(" ")
                     }
                 }
-                None => String::from("   "),
+                None => String::from(" "),
             };
+
             if (game.x, game.y) == (i, j) {
+                if !game.status {
+                    tile_body = String::from("💥");    
+                }
                 s.push_str(format!("<{}>│", tile_body).as_str());
             } else {
                 s.push_str(format!(" {} │", tile_body).as_str());
             }
         }
         s.push('\n');
-        for _ in 0..game.size+1 {
+        for _ in 0..game.size {
             s.push_str("────")
         }
         s.push('\n');
