@@ -43,10 +43,12 @@ impl<I: MinesweeperInterface> App<I> {
 
     pub async fn make_move(&mut self, action: movement::Action, direction: movement::Direction) -> Result<()> {
         if let Err(e) = self.interface.make_move(action, direction).await {
-            self.error_message = e.to_string();
+            // unfortunately these errors don't propagate the failure reasons from the contract
+            // we can infer our own but they may be wrong
+            self.error_message = "Move failed. Remember you can only move once the current square has been revealed. You also cannot move outside the board.".to_string();
             Ok(())
         } else {
-            self.error_message = String::new();
+            self.error_message = "Move successful".to_string();
             self.sync().await
         }
     }
@@ -56,7 +58,7 @@ impl<I: MinesweeperInterface> App<I> {
             self.error_message = e.to_string();
             Ok(())            
         } else {
-            self.error_message = String::new();
+            self.error_message = "Reveal successful".to_string();
             self.sync().await
         }
     }
@@ -115,34 +117,47 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(terminal: &mut Terminal<B>
 
 // Render a board onto the given rectangle with the frame
 fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &[Tile]) {
-    let tiles: Vec<Row> = (0..game.size).map(|j| {
-        Row::new((0..game.size).map(|i| {
-            if (game.x, game.y) == (i, j) {
-                return Cell::from("👨");
-            }
-            match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
+
+    let mut s = String::new();
+    // top edge
+    for _ in 0..game.size+1 {
+        s.push_str("────")
+    }
+    s.push('\n');
+
+    // tile grid
+    for j in 0..game.size {
+        s.push('│');
+        for i in 0..game.size {
+            let tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
                 Some(tile) => {
                     if tile.explored {
-                        Cell::from(format!("{}", tile.clue))
+                        format!(" {} ", tile.clue)
                     } else if tile.danger {
-                        Cell::from("🚩")
+                        String::from(" 🚩 ")
                     } else {
-                        Cell::from("⬜")
+                        String::from("   ")
                     }
                 }
-                None => Cell::from("⬜"),
+                None => String::from("   "),
+            };
+            if (game.x, game.y) == (i, j) {
+                s.push_str(format!("<{}>│", tile_body).as_str());
+            } else {
+                s.push_str(format!(" {} │", tile_body).as_str());
             }
-        }))
-    }).collect();
+        }
+        s.push('\n');
+        for _ in 0..game.size+1 {
+            s.push_str("────")
+        }
+        s.push('\n');
+    }
 
-    let widths = (0..game.size).map(|_| {Constraint::Min(2)}).collect::<Vec<Constraint>>();
+    let board = Paragraph::new(s)
+        .alignment(Alignment::Center);
 
-    let minefield = Table::new(tiles)
-        .style(Style::default().fg(Color::White))
-        .widths(&widths)
-        .column_spacing(0);
-
-    f.render_widget(minefield, canvas);
+    f.render_widget(board, canvas);
 }
 
 fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
@@ -151,10 +166,10 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     2: Move down
     3: Move down right
     4: Move left
-    6: Move right
-    7: Move up left
-    8: Move up
-    9: Move up right
+    5: Move right
+    6: Move up left
+    7: Move up
+    8: Move up right
 
     R: Reval current tile
     Q: Quit the game
