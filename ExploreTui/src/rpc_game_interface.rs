@@ -1,9 +1,5 @@
-use crate::minesweeper::MinesweeperInterface;
-use crate::movement::{Action, Direction};
 use anyhow::Result;
 use async_trait::async_trait;
-
-use crate::components::{Game, Tile};
 use dojo_world::world::WorldContract;
 use starknet::accounts::Account;
 use starknet::core::types::{BlockId, BlockTag, FieldElement};
@@ -12,6 +8,10 @@ use starknet::{
     providers::{jsonrpc::HttpTransport, JsonRpcClient},
     signers::LocalWallet,
 };
+
+use crate::components::{Game, Tile};
+use crate::minesweeper::MinesweeperInterface;
+use crate::movement::{Action, Direction};
 
 type LocalAccount = SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>;
 
@@ -39,6 +39,7 @@ impl<'a> RpcGameInterface<'a> {
             .await?)
     }
 
+    // execute a system given its name and calldata
     async fn execute_system_raw(
         &self,
         system: &str,

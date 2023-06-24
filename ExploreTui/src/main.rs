@@ -1,11 +1,5 @@
-
-use clap::Parser;
-
-
-
-
-
 use args::Args;
+use clap::Parser;
 
 mod args;
 mod components;
