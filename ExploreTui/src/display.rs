@@ -48,12 +48,13 @@ impl<I: MinesweeperInterface> App<I> {
         Ok(())
     }
 
-    pub async fn make_move(
-        &mut self,
-        action: movement::Action,
-        direction: movement::Direction,
-    ) -> Result<()> {
-        if let Err(e) = self.interface.make_move(action, direction).await {
+    pub async fn make_move(&mut self, direction: movement::Direction) -> Result<()> {
+        let action = if self.defuse_mode {
+            movement::Action::Safe
+        } else {
+            movement::Action::Unsafe
+        };
+        if let Err(_e) = self.interface.make_move(action, direction).await {
             // unfortunately these errors don't propagate the failure reasons from the contract
             // we can infer our own but they may be wrong
             self.error_message = "Move failed. Remember you can only move once the current square has been revealed. You also cannot move outside the board.".to_string();
@@ -117,38 +118,20 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
                 KeyCode::Char('n') => app.new_game().await?,
-                KeyCode::Char('1') => {
-                    app.make_move(movement::Action::Safe, movement::Direction::DownLeft)
-                        .await?
-                }
+                KeyCode::Char('1') => app.make_move(movement::Direction::DownLeft).await?,
                 KeyCode::Char('2') | KeyCode::Down => {
-                    app.make_move(movement::Action::Safe, movement::Direction::Down)
-                        .await?
+                    app.make_move(movement::Direction::Down).await?
                 }
-                KeyCode::Char('3') => {
-                    app.make_move(movement::Action::Safe, movement::Direction::DownRight)
-                        .await?
-                }
+                KeyCode::Char('3') => app.make_move(movement::Direction::DownRight).await?,
                 KeyCode::Char('4') | KeyCode::Left => {
-                    app.make_move(movement::Action::Safe, movement::Direction::Left)
-                        .await?
+                    app.make_move(movement::Direction::Left).await?
                 }
                 KeyCode::Char('5') | KeyCode::Right => {
-                    app.make_move(movement::Action::Safe, movement::Direction::Right)
-                        .await?
+                    app.make_move(movement::Direction::Right).await?
                 }
-                KeyCode::Char('6') => {
-                    app.make_move(movement::Action::Safe, movement::Direction::UpLeft)
-                        .await?
-                }
-                KeyCode::Char('7') | KeyCode::Up => {
-                    app.make_move(movement::Action::Safe, movement::Direction::Up)
-                        .await?
-                }
-                KeyCode::Char('8') => {
-                    app.make_move(movement::Action::Safe, movement::Direction::UpRight)
-                        .await?
-                }
+                KeyCode::Char('6') => app.make_move(movement::Direction::UpLeft).await?,
+                KeyCode::Char('7') | KeyCode::Up => app.make_move(movement::Direction::Up).await?,
+                KeyCode::Char('8') => app.make_move(movement::Direction::UpRight).await?,
                 KeyCode::Char('r') => app.reveal().await?,
                 KeyCode::Char(' ') => app.defuse_mode = !app.defuse_mode,
                 _ => {}
