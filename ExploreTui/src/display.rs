@@ -1,9 +1,11 @@
-use crate::minesweeper::{MinesweeperInterface, BoardState, TileStatus};
+use crate::minesweeper::{MinesweeperInterface};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use anyhow::Result;
+use crate::components::{Game, Tile};
 use std::{error::Error, io};
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -16,7 +18,8 @@ use tui::{
 
 #[derive(Default)]
 struct App {
-    board: BoardState,
+    game: Game,
+    tiles: Vec<Tile>,
 }
 
 
@@ -26,7 +29,7 @@ impl App {
     }
 }
 
-pub fn start(_interface: impl MinesweeperInterface) -> Result<(), Box<dyn Error>> {
+pub async fn start(interface: impl MinesweeperInterface) -> Result<()> {
     // setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -36,7 +39,7 @@ pub fn start(_interface: impl MinesweeperInterface) -> Result<(), Box<dyn Error>
 
     // create app and run it
     let app = App::new();
-    let res = run_app(&mut terminal, app);
+    run_app(&mut terminal, app, interface).await?;
 
     // restore terminal
     disable_raw_mode()?;
@@ -47,14 +50,13 @@ pub fn start(_interface: impl MinesweeperInterface) -> Result<(), Box<dyn Error>
     )?;
     terminal.show_cursor()?;
 
-    if let Err(err) = res {
-        println!("{:?}", err)
-    }
-
     Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
+async fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, interface: impl MinesweeperInterface) -> Result<()> {
+
+    app.game = interface.get_game().await?;
+
     loop {
         terminal.draw(|f| renderer(f, &mut app))?;
 
@@ -70,22 +72,28 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
 }
 
 // Render a board onto the given rectangle with the frame
-fn render_board<B: Backend>(f: &mut Frame<B>, canvas: Rect, board: &BoardState) {
-    let tiles: Vec<Row> = (0..board.size.1).map(|i| {
-        Row::new((0..board.size.0).map(|j| {
-            if board.player_position == (i, j) {
+fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &[Tile]) {
+    let tiles: Vec<Row> = (0..game.size).map(|i| {
+        Row::new((0..game.size).map(|j| {
+            if (game.x, game.y) == (i, j) {
                 return Cell::from("👨");
             }
-            match board.board.get(i * board.size.0 + j) {
-                Some(TileStatus::Hidden) => Cell::from("⬜"),
-                Some(TileStatus::Revealed(danger_level)) => Cell::from(format!("{}", danger_level)),
-                Some(TileStatus::Flagged) => Cell::from("🚩"),
+            match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
+                Some(tile) => {
+                    if tile.explored {
+                        Cell::from(format!("{}", tile.clue))
+                    } else if tile.danger {
+                        Cell::from("🚩")
+                    } else {
+                        Cell::from("⬜")
+                    }
+                }
                 None => Cell::from("⬜"),
             }
         }))
     }).collect();
 
-    let widths = (0..board.size.0).map(|_| {Constraint::Min(2)}).collect::<Vec<Constraint>>();
+    let widths = (0..game.size).map(|_| {Constraint::Min(2)}).collect::<Vec<Constraint>>();
 
     let minefield = Table::new(tiles)
         .style(Style::default().fg(Color::White))
@@ -119,8 +127,13 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
 
 }
 
-fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, board: &BoardState) {
-    let score_text = "Mines: 0";
+fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game) {
+    let score_text = format!("
+    Name: {}
+    Status: {}
+    Level: {}
+    Score: {}
+", game.name, if game.status {"Active"} else {"Game Over"} , game.level, game.score);
 
     let score = Paragraph::new(score_text)
             .block(Block::default().title("Score").borders(Borders::ALL))
@@ -159,12 +172,8 @@ fn renderer<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let score_chunk = sidebar[0];
     let instructions_chunk = sidebar[1];
 
-
-    app.board.size = (5, 5);
-    app.board.player_position = (3,3);
-
-    render_board(f, board_chunk, &app.board);
+    render_game(f, board_chunk, &app.game, &app.tiles);
     render_instructions(f, instructions_chunk);
-    render_score(f, score_chunk, &app.board);
+    render_score(f, score_chunk, &app.game);
 
 }

@@ -1,7 +1,6 @@
 use starknet::core::types::FieldElement;
-use toml::de;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Game {
     pub name: String,
     pub status: bool,
