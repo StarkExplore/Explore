@@ -21,7 +21,7 @@ impl TryFrom<Vec<FieldElement>> for Game {
     fn try_from(value: Vec<FieldElement>) -> Result<Self, Self::Error> {
         Ok(Game {
             name: String::from_utf8(value[0].to_bytes_be().to_vec())?,
-            status: value[1] == 0_u8.into(),
+            status: value[1] != FieldElement::ZERO,
             score: value[2].try_into()?,
             seed: value[3].to_bytes_be(),
             commited_block_timestamp: value[4].try_into()?,

@@ -4,7 +4,7 @@ use options::dojo_metadata_from_workspace;
 use scarb::core::Config;
 
 use dojo_world::world::WorldContract;
-use minesweeper::MinesweeperInterface;
+use minesweeper::{MinesweeperInterface, BoardState};
 
 mod display;
 mod minesweeper;
@@ -70,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
     let interface = rpc_game_interface::RpcGameInterface::new(world);
 
     let game = interface.get_game().await?;
-    print!("{:?}", game);
+    print!("{:?}", BoardState::from_components(game, Vec::new()));
 
     // display::start(interface);
 

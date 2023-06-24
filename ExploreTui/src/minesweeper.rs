@@ -13,13 +13,35 @@ pub trait MinesweeperInterface {
     async fn reveal(&self) -> Result<FieldElement>;
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct BoardState {
     pub size: (usize, usize),
     pub player_position: (usize, usize),
     pub board: Vec<TileStatus>, // row-major order
 }
 
+impl BoardState {
+    pub fn from_components(game: Game, tiles: Vec<Tile>) -> Self {
+        let mut board = vec![TileStatus::default(); (game.size * game.size) as usize];
+        for tile in tiles {
+            let index = tile.x as usize + tile.y as usize * game.size as usize;
+            board[index] = if tile.explored {
+                TileStatus::Revealed(tile.clue)
+            } else if tile.danger {
+                TileStatus::Flagged
+            } else {
+                TileStatus::Hidden
+            };
+        }
+        BoardState {
+            size: (game.size as usize, game.size as usize),
+            player_position: (game.x as usize, game.y as usize),
+            board,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
 pub enum TileStatus {
     Hidden,
     Revealed(u8), // contains the danger level

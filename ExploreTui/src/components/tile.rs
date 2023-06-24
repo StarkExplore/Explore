@@ -14,8 +14,8 @@ impl TryFrom<Vec<FieldElement>> for Tile {
 
     fn try_from(value: Vec<FieldElement>) -> Result<Self, Self::Error> {
         Ok(Tile {
-            explored: value[0] == 0_u8.into(),
-            danger: value[1] == 0_u8.into(),
+            explored: value[0] != FieldElement::ZERO,
+            danger: value[1] != FieldElement::ZERO,
             clue: value[2].try_into()?,
             x: value[3].try_into()?,
             y: value[4].try_into()?,
