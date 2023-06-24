@@ -1,8 +1,8 @@
+use crate::components::{Game, Tile};
 use crate::movement::{Action, Direction};
 use anyhow::Result;
 use async_trait::async_trait;
 use starknet::core::types::FieldElement;
-use crate::components::{Game, Tile};
 
 #[async_trait]
 pub trait MinesweeperInterface {

@@ -1,16 +1,16 @@
-use crate::minesweeper::{MinesweeperInterface};
+use crate::components::{Game, Tile};
+use crate::minesweeper::MinesweeperInterface;
+use crate::movement;
+use anyhow::Result;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use anyhow::Result;
-use crate::components::{Game, Tile};
-use crate::movement;
 use std::io;
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Layout, Direction, Alignment, Rect},
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Style},
     widgets::{Block, Borders, Paragraph, Wrap},
     Frame, Terminal,
@@ -21,9 +21,9 @@ struct App<I> {
     game: Game,
     tiles: Vec<Tile>,
     error_message: String,
+    defuse_mode: bool,
     interface: I,
 }
-
 
 impl<I: MinesweeperInterface> App<I> {
     pub fn new(interface: I) -> Self {
@@ -31,6 +31,7 @@ impl<I: MinesweeperInterface> App<I> {
             interface,
             game: Game::default(),
             error_message: String::new(),
+            defuse_mode: false,
             tiles: Vec::new(),
         }
     }
@@ -40,13 +41,18 @@ impl<I: MinesweeperInterface> App<I> {
         self.tiles.clear();
         for j in 0..self.game.size {
             for i in 0..self.game.size {
-                self.tiles.push(self.interface.get_tile(i.into(), j.into()).await?);
+                self.tiles
+                    .push(self.interface.get_tile(i.into(), j.into()).await?);
             }
         }
         Ok(())
     }
 
-    pub async fn make_move(&mut self, action: movement::Action, direction: movement::Direction) -> Result<()> {
+    pub async fn make_move(
+        &mut self,
+        action: movement::Action,
+        direction: movement::Direction,
+    ) -> Result<()> {
         if let Err(e) = self.interface.make_move(action, direction).await {
             // unfortunately these errors don't propagate the failure reasons from the contract
             // we can infer our own but they may be wrong
@@ -61,7 +67,7 @@ impl<I: MinesweeperInterface> App<I> {
     pub async fn reveal(&mut self) -> Result<()> {
         if let Err(e) = self.interface.reveal().await {
             self.error_message = e.to_string();
-            Ok(())            
+            Ok(())
         } else {
             self.error_message = "Reveal successful".to_string();
             self.sync().await
@@ -98,8 +104,10 @@ pub async fn start(interface: impl MinesweeperInterface) -> Result<()> {
     Ok(())
 }
 
-async fn run_app<B: Backend, I: MinesweeperInterface>(terminal: &mut Terminal<B>, mut app: App<I>) -> Result<()> {
-
+async fn run_app<B: Backend, I: MinesweeperInterface>(
+    terminal: &mut Terminal<B>,
+    mut app: App<I>,
+) -> Result<()> {
     app.sync().await?;
 
     loop {
@@ -109,17 +117,40 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(terminal: &mut Terminal<B>
             match key.code {
                 KeyCode::Char('q') => return Ok(()),
                 KeyCode::Char('n') => app.new_game().await?,
-                KeyCode::Char('1') => app.make_move(movement::Action::Safe, movement::Direction::DownLeft).await?,
-                KeyCode::Char('2') | KeyCode::Down => app.make_move(movement::Action::Safe, movement::Direction::Down).await?,
-                KeyCode::Char('3') => app.make_move(movement::Action::Safe, movement::Direction::DownRight).await?,
-                KeyCode::Char('4') | KeyCode::Left => app.make_move(movement::Action::Safe, movement::Direction::Left).await?,
-                KeyCode::Char('5') | KeyCode::Right => app.make_move(movement::Action::Safe, movement::Direction::Right).await?,
-                KeyCode::Char('6') => app.make_move(movement::Action::Safe, movement::Direction::UpLeft).await?,
-                KeyCode::Char('7') | KeyCode::Up => app.make_move(movement::Action::Safe, movement::Direction::Up).await?,
-                KeyCode::Char('8') => app.make_move(movement::Action::Safe, movement::Direction::UpRight).await?,
+                KeyCode::Char('1') => {
+                    app.make_move(movement::Action::Safe, movement::Direction::DownLeft)
+                        .await?
+                }
+                KeyCode::Char('2') | KeyCode::Down => {
+                    app.make_move(movement::Action::Safe, movement::Direction::Down)
+                        .await?
+                }
+                KeyCode::Char('3') => {
+                    app.make_move(movement::Action::Safe, movement::Direction::DownRight)
+                        .await?
+                }
+                KeyCode::Char('4') | KeyCode::Left => {
+                    app.make_move(movement::Action::Safe, movement::Direction::Left)
+                        .await?
+                }
+                KeyCode::Char('5') | KeyCode::Right => {
+                    app.make_move(movement::Action::Safe, movement::Direction::Right)
+                        .await?
+                }
+                KeyCode::Char('6') => {
+                    app.make_move(movement::Action::Safe, movement::Direction::UpLeft)
+                        .await?
+                }
+                KeyCode::Char('7') | KeyCode::Up => {
+                    app.make_move(movement::Action::Safe, movement::Direction::Up)
+                        .await?
+                }
+                KeyCode::Char('8') => {
+                    app.make_move(movement::Action::Safe, movement::Direction::UpRight)
+                        .await?
+                }
                 KeyCode::Char('r') => app.reveal().await?,
-
-                // KeyCode::Up => app.previous(),
+                KeyCode::Char(' ') => app.defuse_mode = !app.defuse_mode,
                 _ => {}
             }
         }
@@ -128,7 +159,6 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(terminal: &mut Terminal<B>
 
 // Render a board onto the given rectangle with the frame
 fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &[Tile]) {
-
     let mut s = String::new();
     // top edge
     for _ in 0..game.size {
@@ -153,7 +183,7 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
 
             if (game.x, game.y) == (i, j) {
                 if !game.status {
-                    tile_body = String::from("💥");    
+                    tile_body = String::from("💥");
                 }
                 s.push_str(format!("<{}>│", tile_body).as_str());
             } else {
@@ -167,8 +197,7 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
         s.push('\n');
     }
 
-    let board = Paragraph::new(s)
-        .alignment(Alignment::Center);
+    let board = Paragraph::new(s).alignment(Alignment::Center);
 
     f.render_widget(board, canvas);
 }
@@ -185,43 +214,50 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     8: Move up right
 
     R: Reval current tile
+    <Space>: Toggle Defuse Mode
 
     N: Start a new game
-    Q: Quit the game
-    
-        ";
-    
-        let instructions = Paragraph::new(instructions_text)
-            .block(Block::default().title("Controls").borders(Borders::ALL))
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: true });
-        f.render_widget(instructions, canvas);
+    Q: Quit the game";
 
+    let instructions = Paragraph::new(instructions_text)
+        .block(Block::default().title("Controls").borders(Borders::ALL))
+        .style(Style::default().fg(Color::White).bg(Color::Black))
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: true });
+    f.render_widget(instructions, canvas);
 }
 
-fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game) {
-    let score_text = format!("
+fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, defuse_mode: bool) {
+    let score_text = format!(
+        "
     Name: {}
     Status: {}
     Level: {}
     Score: {}
-", game.name, if game.status {"Active"} else {"Game Over"} , game.level, game.score);
+
+   Move Mode: {}
+",
+        game.name,
+        if game.status { "Active" } else { "Game Over" },
+        game.level,
+        game.score,
+        if defuse_mode { "Defuse" } else { "Move" }
+    );
 
     let score = Paragraph::new(score_text)
-            .block(Block::default().title("Score").borders(Borders::ALL))
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: true });
-        f.render_widget(score, canvas);
+        .block(Block::default().title("Score").borders(Borders::ALL))
+        .style(Style::default().fg(Color::White).bg(Color::Black))
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: true });
+    f.render_widget(score, canvas);
 }
 
 fn render_info<B: Backend>(f: &mut Frame<B>, canvas: Rect, info: &str) {
     let info = Paragraph::new(info)
-            .block(Block::default().title("Info").borders(Borders::ALL))
-            .style(Style::default().fg(Color::White).bg(Color::Black))
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: true });
+        .block(Block::default().title("Info").borders(Borders::ALL))
+        .style(Style::default().fg(Color::White).bg(Color::Black))
+        .alignment(Alignment::Left)
+        .wrap(Wrap { trim: true });
     f.render_widget(info, canvas);
 }
 
@@ -230,7 +266,10 @@ fn split(r: Rect, into: usize, direction: Direction) -> Vec<Rect> {
     Layout::default()
         .direction(direction)
         .constraints(
-            (0..into).map(|_| Constraint::Ratio(1, into as u32)).collect::<Vec<Constraint>>().as_ref()
+            (0..into)
+                .map(|_| Constraint::Ratio(1, into as u32))
+                .collect::<Vec<Constraint>>()
+                .as_ref(),
         )
         .split(r)
 }
@@ -238,37 +277,28 @@ fn split(r: Rect, into: usize, direction: Direction) -> Vec<Rect> {
 // Render the entire
 fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
     let chunks = Layout::default()
-    .direction(Direction::Vertical)
-    .constraints(
-        [
-            Constraint::Percentage(80),
-            Constraint::Percentage(20),
-        ]
-        .as_ref(),
-    )
-    .split(f.size());
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(80), Constraint::Percentage(20)].as_ref())
+        .split(f.size());
 
     let error_chunk = chunks[1];
 
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage(70),
-                Constraint::Percentage(30),
-            ]
-            .as_ref(),
-        )
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
         .split(chunks[0]);
 
-    let board_chunk = split(split(chunks[0], 3, Direction::Vertical)[1], 3, Direction::Horizontal)[1];
+    let board_chunk = split(
+        split(chunks[0], 3, Direction::Vertical)[1],
+        3,
+        Direction::Horizontal,
+    )[1];
     let sidebar = split(chunks[1], 2, Direction::Vertical);
     let score_chunk = sidebar[0];
     let instructions_chunk = sidebar[1];
 
     render_game(f, board_chunk, &app.game, &app.tiles);
     render_instructions(f, instructions_chunk);
-    render_score(f, score_chunk, &app.game);
+    render_score(f, score_chunk, &app.game, app.defuse_mode);
     render_info(f, error_chunk, &app.error_message);
-
 }

@@ -6,12 +6,12 @@ use scarb::core::Config;
 use dojo_world::world::WorldContract;
 use minesweeper::MinesweeperInterface;
 
+mod components;
 mod display;
 mod minesweeper;
 mod movement;
 mod options;
 mod rpc_game_interface;
-mod components;
 
 /// Terminal interface for StarkExplore
 #[derive(Parser, Debug)]
@@ -70,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
     let interface = rpc_game_interface::RpcGameInterface::new(world);
 
     let game = interface.get_game().await?;
- 
+
     display::start(interface).await?;
 
     Ok(())
