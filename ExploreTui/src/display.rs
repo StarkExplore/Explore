@@ -21,6 +21,7 @@ use tui::{
 struct App<I> {
     game: Game,
     tiles: Vec<Tile>,
+    error_message: String,
     interface: I,
 }
 
@@ -30,6 +31,7 @@ impl<I: MinesweeperInterface> App<I> {
         Self {
             interface,
             game: Game::default(),
+            error_message: String::new(),
             tiles: Vec::new(),
         }
     }
@@ -40,13 +42,23 @@ impl<I: MinesweeperInterface> App<I> {
     }
 
     pub async fn make_move(&mut self, action: movement::Action, direction: movement::Direction) -> Result<()> {
-        self.interface.make_move(action, direction).await?;
-        self.sync().await
+        if let Err(e) = self.interface.make_move(action, direction).await {
+            self.error_message = e.to_string();
+            Ok(())
+        } else {
+            self.error_message = String::new();
+            self.sync().await
+        }
     }
 
     pub async fn reveal(&mut self) -> Result<()> {
-        self.interface.reveal().await?;
-        self.sync().await
+        if let Err(e) = self.interface.reveal().await {
+            self.error_message = e.to_string();
+            Ok(())            
+        } else {
+            self.error_message = String::new();
+            self.sync().await
+        }
     }
 }
 
@@ -174,6 +186,14 @@ fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game) {
         f.render_widget(score, canvas);
 }
 
+fn render_info<B: Backend>(f: &mut Frame<B>, canvas: Rect, info: &str) {
+    let info = Paragraph::new(info)
+            .block(Block::default().title("Info").borders(Borders::ALL))
+            .style(Style::default().fg(Color::White).bg(Color::Black))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+    f.render_widget(info, canvas);
+}
 
 // split a rect into equal parts
 fn split(r: Rect, into: usize, direction: Direction) -> Vec<Rect> {
@@ -188,6 +208,19 @@ fn split(r: Rect, into: usize, direction: Direction) -> Vec<Rect> {
 // Render the entire
 fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
     let chunks = Layout::default()
+    .direction(Direction::Vertical)
+    .constraints(
+        [
+            Constraint::Percentage(80),
+            Constraint::Percentage(20),
+        ]
+        .as_ref(),
+    )
+    .split(f.size());
+
+    let error_chunk = chunks[1];
+
+    let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(
             [
@@ -196,7 +229,7 @@ fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
             ]
             .as_ref(),
         )
-        .split(f.size());
+        .split(chunks[0]);
 
     let board_chunk = split(split(chunks[0], 3, Direction::Vertical)[1], 3, Direction::Horizontal)[1];
     let sidebar = split(chunks[1], 2, Direction::Vertical);
@@ -206,5 +239,6 @@ fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
     render_game(f, board_chunk, &app.game, &app.tiles);
     render_instructions(f, instructions_chunk);
     render_score(f, score_chunk, &app.game);
+    render_info(f, error_chunk, &app.error_message);
 
 }
