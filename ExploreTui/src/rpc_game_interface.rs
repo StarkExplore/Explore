@@ -11,6 +11,7 @@ use starknet::{
     providers::{jsonrpc::HttpTransport, JsonRpcClient},
     signers::LocalWallet,
 };
+use crate::components::{Game, Tile};
 
 type LocalAccount = SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>;
 
@@ -51,14 +52,14 @@ impl<'a> RpcGameInterface<'a> {
 #[async_trait]
 impl<'a> MinesweeperInterface for RpcGameInterface<'a> {
     // gets the game for the current account
-    async fn get_game(&self) -> Result<Vec<FieldElement>> {
+    async fn get_game(&self) -> Result<Game> {
         self.get_component_raw("Game", vec![self.world.account.address()])
-            .await
+            .await.map(TryInto::try_into)?
     }
 
-    async fn get_tile(&self, x: FieldElement, y: FieldElement) -> Result<Vec<FieldElement>> {
+    async fn get_tile(&self, x: FieldElement, y: FieldElement) -> Result<Tile> {
         self.get_component_raw("Tile", vec![self.world.account.address(), x, y])
-            .await
+            .await.map(TryInto::try_into)?
     }
 
     async fn create_game(&self, name: FieldElement) -> Result<FieldElement> {

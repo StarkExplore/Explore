@@ -11,6 +11,7 @@ mod minesweeper;
 mod movement;
 mod options;
 mod rpc_game_interface;
+mod components;
 
 /// Terminal interface for StarkExplore
 #[derive(Parser, Debug)]
@@ -68,10 +69,10 @@ async fn main() -> anyhow::Result<()> {
 
     let interface = rpc_game_interface::RpcGameInterface::new(world);
 
-    // let game = interface.get_game().await?;
-    // print!("{:?}", game);
+    let game = interface.get_game().await?;
+    print!("{:?}", game);
 
-    display::start(interface);
+    // display::start(interface);
 
     Ok(())
 }
