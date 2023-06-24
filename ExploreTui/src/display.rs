@@ -7,13 +7,12 @@ use crossterm::{
 use anyhow::Result;
 use crate::components::{Game, Tile};
 use crate::movement;
-use std::{error::Error, io};
+use std::io;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Layout, Direction, Alignment, Rect},
-    style::{Color, Modifier, Style},
-    text::{Spans, Span},
-    widgets::{Block, Borders, Cell, Row, Table, Paragraph, Wrap},
+    style::{Color, Style},
+    widgets::{Block, Borders, Paragraph, Wrap},
     Frame, Terminal,
 };
 
@@ -38,6 +37,12 @@ impl<I: MinesweeperInterface> App<I> {
 
     pub async fn sync(&mut self) -> Result<()> {
         self.game = self.interface.get_game().await?;
+        self.tiles.clear();
+        for j in 0..self.game.size {
+            for i in 0..self.game.size {
+                self.tiles.push(self.interface.get_tile(i.into(), j.into()).await?);
+            }
+        }
         Ok(())
     }
 
@@ -105,12 +110,12 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(terminal: &mut Terminal<B>
                 KeyCode::Char('q') => return Ok(()),
                 KeyCode::Char('n') => app.new_game().await?,
                 KeyCode::Char('1') => app.make_move(movement::Action::Safe, movement::Direction::DownLeft).await?,
-                KeyCode::Char('2') => app.make_move(movement::Action::Safe, movement::Direction::Down).await?,
+                KeyCode::Char('2') | KeyCode::Down => app.make_move(movement::Action::Safe, movement::Direction::Down).await?,
                 KeyCode::Char('3') => app.make_move(movement::Action::Safe, movement::Direction::DownRight).await?,
-                KeyCode::Char('4') => app.make_move(movement::Action::Safe, movement::Direction::Left).await?,
-                KeyCode::Char('5') => app.make_move(movement::Action::Safe, movement::Direction::Right).await?,
+                KeyCode::Char('4') | KeyCode::Left => app.make_move(movement::Action::Safe, movement::Direction::Left).await?,
+                KeyCode::Char('5') | KeyCode::Right => app.make_move(movement::Action::Safe, movement::Direction::Right).await?,
                 KeyCode::Char('6') => app.make_move(movement::Action::Safe, movement::Direction::UpLeft).await?,
-                KeyCode::Char('7') => app.make_move(movement::Action::Safe, movement::Direction::Up).await?,
+                KeyCode::Char('7') | KeyCode::Up => app.make_move(movement::Action::Safe, movement::Direction::Up).await?,
                 KeyCode::Char('8') => app.make_move(movement::Action::Safe, movement::Direction::UpRight).await?,
                 KeyCode::Char('r') => app.reveal().await?,
 
