@@ -11,6 +11,7 @@
 ## Game Concept
 
 A reimagined version of Minesweeper with elements of loot survivor and features exploiting asymmetric information.
+Description of the rules: <a href="https://app.excalidraw.com/l/4BTLOTSvKjp/9s0xHAoa0ia"> Schema </a>
 
 ## Gameplay
 
