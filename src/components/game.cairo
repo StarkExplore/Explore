@@ -1,18 +1,20 @@
 use array::ArrayTrait;
+use serde::Serde;
+use traits::Into;
+use poseidon::poseidon_hash_span;
 
-// @notice: This is the main game component
-// @param player: Player address
-// @param name: Player name
-// @param status: false: dead, true: alive
-// @param score: Number of tiles explored
-// @param seed: Initial seed used to define bomb positions
-// @param commited_block_timestamp: Security to avoid a player to move twice in a block
-// @param x: Explorer coordinate X
-// @param y: Explorer coordinate Y
-// @param level: Difficulity used to scale the number of bombs
-// @param max_x: Map edges, at any moment 0 <= x < max_x
-// @param max_y: Map edges, at any moment 0 <= y < max_y
-// @param action: Committed action, 1: safe, 2: neutralize
+// @notice This is the main game component
+// @param name Player name
+// @param status Boolean which is false if game is over, true otherwise
+// @param score The number of tiles explored
+// @param seed Initial seed used to define bomb positions
+// @param commited_block_timestamp Security to avoid a player to move twice in a block
+// @param x Player coordinate X
+// @param y Player coordinate Y
+// @param level The dangerifficulity used to scale the number of bombs
+// @param size The size of the current grid
+// @param shield A boolean that indicates if the player has a shield
+// @param kits The number of kits the player has
 #[derive(Component, Copy, Drop, Serde)]
 struct Game {
     name: felt252,
@@ -24,5 +26,135 @@ struct Game {
     y: u16,
     level: u8,
     size: u16,
-    action: u8,
+    shield: bool,
+    kits: u16,
 }
+
+// @notice The allowed directions
+#[derive(Serde, Copy, Drop, PartialEq)]
+enum Direction {
+    Left: (),
+    UpLeft: (),
+    Up: (),
+    UpRight: (),
+    Right: (),
+    DownRight: (),
+    Down: (),
+    DownLeft: (),
+}
+
+// @notice The GameTrait definition
+// @dev Methods relative to Game logic are defined here
+trait GameTrait {
+    fn next_position(x: u16, y: u16, size: u16, direction: Direction) -> (u16, u16);
+}
+
+// @notice The implementation of the GameTrait
+// @dev Methods relative to Game logic are implemented here
+impl GameImpl of GameTrait {
+    fn next_position(x: u16, y: u16, size: u16, direction: Direction) -> (u16, u16) {
+        match direction {
+            Direction::Left(()) => {
+                assert(x != 0, 'Cannot move left');
+                (x - 1, y)
+            },
+            Direction::UpLeft(()) => {
+                assert(x != 0, 'Cannot move left');
+                assert(y != 0, 'Cannot move up');
+                (x - 1, y - 1)
+            },
+            Direction::Up(()) => {
+                assert(y != 0, 'Cannot move up');
+                (x, y - 1)
+            },
+            Direction::UpRight(()) => {
+                assert(x + 1 != size, 'Cannot move right');
+                assert(y != 0, 'Cannot move up');
+                (x + 1, y - 1)
+            },
+            Direction::Right(()) => {
+                assert(x + 1 != size, 'Cannot move right');
+                (x + 1, y)
+            },
+            Direction::DownRight(()) => {
+                assert(x + 1 != size, 'Cannot move right');
+                assert(y + 1 != size, 'Cannot move down');
+                (x + 1, y + 1)
+            },
+            Direction::Down(()) => {
+                assert(y + 1 != size, 'Cannot move down');
+                (x, y + 1)
+            },
+            Direction::DownLeft(()) => {
+                assert(x != 0, 'Cannot move left');
+                assert(y + 1 != size, 'Cannot move down');
+                (x - 1, y + 1)
+            },
+        }
+    }
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_left() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Left(()));
+    assert(x == 0_u16, 'wrong x');
+    assert(y == 1_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_up_left() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::UpLeft(()));
+    assert(x == 0_u16, 'wrong x');
+    assert(y == 0_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_up() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Up(()));
+    assert(x == 1_u16, 'wrong x');
+    assert(y == 0_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_up_right() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::UpRight(()));
+    assert(x == 2_u16, 'wrong x');
+    assert(y == 0_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_right() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Right(()));
+    assert(x == 2_u16, 'wrong x');
+    assert(y == 1_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_down_right() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::DownRight(()));
+    assert(x == 2_u16, 'wrong x');
+    assert(y == 2_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_down() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Down(()));
+    assert(x == 1_u16, 'wrong x');
+    assert(y == 2_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_down_left() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::DownLeft(()));
+    assert(x == 0_u16, 'wrong x');
+    assert(y == 2_u16, 'wrong y');
+}
+

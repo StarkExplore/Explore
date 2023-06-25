@@ -16,6 +16,9 @@ use tui::{
     Frame, Terminal,
 };
 
+const CLUE_NO_MINE: [char; 10] = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
+const CLUE_MINE: [char; 10] = ['⓿', '❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
+
 #[derive(Default)]
 struct App<I> {
     game: Game,
@@ -49,18 +52,18 @@ impl<I: MinesweeperInterface> App<I> {
     }
 
     pub async fn make_move(&mut self, direction: movement::Direction) -> Result<()> {
-        let action = if self.defuse_mode {
-            movement::Action::Safe
+        let result = if self.defuse_mode {
+            self.interface.defuse(direction).await
         } else {
-            movement::Action::Unsafe
+            self.interface.make_move(direction).await
         };
-        if let Err(_e) = self.interface.make_move(action, direction).await {
+        if let Err(_e) = result {
             // unfortunately these errors don't propagate the failure reasons from the contract
             // we can infer our own but they may be wrong
             self.error_message = "Move failed. Remember you can only move once the current square has been revealed. You also cannot move outside the board.".to_string();
             Ok(())
         } else {
-            self.error_message = "Move successful".to_string();
+            self.error_message = if self.defuse_mode { "Defuse Successful".to_string() } else { "Move successful".to_string() };
             self.sync().await
         }
     }
@@ -126,12 +129,12 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(
                 KeyCode::Char('4') | KeyCode::Left => {
                     app.make_move(movement::Direction::Left).await?
                 }
-                KeyCode::Char('5') | KeyCode::Right => {
+                KeyCode::Char('6') | KeyCode::Right => {
                     app.make_move(movement::Direction::Right).await?
                 }
-                KeyCode::Char('6') => app.make_move(movement::Direction::UpLeft).await?,
-                KeyCode::Char('7') | KeyCode::Up => app.make_move(movement::Direction::Up).await?,
-                KeyCode::Char('8') => app.make_move(movement::Direction::UpRight).await?,
+                KeyCode::Char('7') => app.make_move(movement::Direction::UpLeft).await?,
+                KeyCode::Char('8') | KeyCode::Up => app.make_move(movement::Direction::Up).await?,
+                KeyCode::Char('9') => app.make_move(movement::Direction::UpRight).await?,
                 KeyCode::Char('r') => app.reveal().await?,
                 KeyCode::Char(' ') => app.defuse_mode = !app.defuse_mode,
                 _ => {}
@@ -144,21 +147,23 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(
 fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &[Tile]) {
     let mut s = String::new();
     // top edge
-    for _ in 0..game.size {
-        s.push_str("────")
+    s.push_str("╭");
+    for _ in 1..game.size {
+        s.push_str("─────")
     }
+    s.push_str("────╮");
     s.push('\n');
 
     // tile grid
     for j in 0..game.size {
         s.push('│');
         for i in 0..game.size {
-            let mut tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
+            let tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
                 Some(tile) => {
-                    if tile.explored {
-                        format!("{}", tile.clue)
-                    } else {
-                        String::from(" ")
+                    match (tile.mine, tile.defused, tile.explored) {
+                        (true, _, true) => String::from(CLUE_MINE[tile.clue as usize]),
+                        (false, _, true) => String::from(CLUE_NO_MINE[tile.clue as usize]),
+                        _ => String::from(" ")
                     }
                 }
                 None => String::from(" "),
@@ -166,18 +171,30 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
 
             if (game.x, game.y) == (i, j) {
                 if !game.status {
-                    tile_body = String::from("💥");
+                    s.push_str(format!("<{}>│", String::from('💥')).as_str());  
+                } else {
+                    s.push_str(format!("<{} >│", tile_body).as_str());
                 }
-                s.push_str(format!("<{}>│", tile_body).as_str());
             } else {
-                s.push_str(format!(" {} │", tile_body).as_str());
+                s.push_str(format!(" {}  │", tile_body).as_str());
             }
         }
-        s.push('\n');
-        for _ in 0..game.size {
-            s.push_str("────")
+
+        // bottom edge
+        if j == game.size - 1 {
+            s.push_str("\n╰");
+            for _ in 1..game.size {
+                s.push_str("─────")
+            }
+            s.push_str("────╯");
+            s.push('\n');
+        } else { // separator
+            s.push_str("\n├");
+            for _ in 1..game.size {
+                s.push_str("─────")
+            }
+            s.push_str("────┤\n");
         }
-        s.push('\n');
     }
 
     let board = Paragraph::new(s).alignment(Alignment::Center);
@@ -191,10 +208,10 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     2: Move down
     3: Move down right
     4: Move left
-    5: Move right
-    6: Move up left
-    7: Move up
-    8: Move up right
+    6: Move right
+    7: Move up left
+    8: Move up
+    9: Move up right
 
     R: Reval current tile
     <Space>: Toggle Defuse Mode
@@ -210,7 +227,12 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     f.render_widget(instructions, canvas);
 }
 
-fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, defuse_mode: bool) {
+fn render_score<B: Backend>(
+    f: &mut Frame<B>,
+    canvas: Rect,
+    game: &Game,
+    defuse_mode: bool,
+) {
     let score_text = format!(
         "
     Name: {}
@@ -218,12 +240,17 @@ fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, defuse_
     Level: {}
     Score: {}
 
+    Shield: {}
+    Defuses kits Remaining: {}
+
    Move Mode: {}
 ",
         game.name,
         if game.status { "Active" } else { "Game Over" },
         game.level,
         game.score,
+        game.shield,
+        game.kits,
         if defuse_mode { "Defuse" } else { "Move" }
     );
 
@@ -271,16 +298,25 @@ fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
         .split(chunks[0]);
 
-    let board_chunk = split(
-        split(chunks[0], 3, Direction::Vertical)[1],
-        3,
-        Direction::Horizontal,
-    )[1];
+    let board_chunk = chunks[0];
     let sidebar = split(chunks[1], 2, Direction::Vertical);
     let score_chunk = sidebar[0];
     let instructions_chunk = sidebar[1];
 
-    render_game(f, board_chunk, &app.game, &app.tiles);
+    // Calculate the center of the board_chunk
+    let board_center_x = board_chunk.x + (board_chunk.width / 2_u16);
+    let board_center_y = board_chunk.y + (board_chunk.height / 2);
+
+    // Calculate the top-left position of the game within the board_chunk
+    let game_width = (board_chunk.width * 80 / 100) as u16; // Adjust as needed
+    let game_height = (board_chunk.height * 80 / 100) as u16; // Adjust as needed
+    let game_x = board_center_x - (game_width / 2);
+    let game_y = board_center_y - (game_height / 2);
+
+    // Create a Rect for the game within the board_chunk
+    let game_chunk = Rect::new(game_x, game_y, game_width, game_height);
+
+    render_game(f, game_chunk, &app.game, &app.tiles);
     render_instructions(f, instructions_chunk);
     render_score(f, score_chunk, &app.game, app.defuse_mode);
     render_info(f, error_chunk, &app.error_message);

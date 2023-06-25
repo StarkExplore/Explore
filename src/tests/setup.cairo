@@ -8,7 +8,7 @@ use dojo_core::auth::systems::{Route, RouteTrait, GrantAuthRole};
 
 use explore::components::tile::TileComponent;
 use explore::components::game::GameComponent;
-use explore::systems::{create::Create, move::Move, reveal::Reveal};
+use explore::systems::{create::Create, move::Move, defuse::Defuse, reveal::Reveal};
 
 const NAME: felt252 = 'NAME';
 
@@ -22,19 +22,19 @@ fn spawn_game() -> ContractAddress {
     let mut systems = array::ArrayTrait::new();
     systems.append(Create::TEST_CLASS_HASH);
     systems.append(Move::TEST_CLASS_HASH);
+    systems.append(Defuse::TEST_CLASS_HASH);
     systems.append(Reveal::TEST_CLASS_HASH);
 
     // [Setup] Routes
     let mut routes = array::ArrayTrait::new();
     routes.append(RouteTrait::new('Create'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Create'.into(), 'TileWriter'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Move'.into(), 'GameReader'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Move'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Move'.into(), 'TileReader'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Reveal'.into(), 'GameReader'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'GameWriter'.into(), 'Game'.into()));
-    routes.append(RouteTrait::new('Reveal'.into(), 'TileReader'.into(), 'Tile'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'TileWriter'.into(), 'Tile'.into()));
+    routes.append(RouteTrait::new('Defuse'.into(), 'GameWriter'.into(), 'Game'.into()));
+    routes.append(RouteTrait::new('Defuse'.into(), 'TileWriter'.into(), 'Tile'.into()));
 
     let world = spawn_test_world(components, systems, routes);
 

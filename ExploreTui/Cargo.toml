@@ -9,8 +9,7 @@ clap = { version = "4.3.5", features = ["derive"] }
 crossterm = "0.26.1"
 tui = "0.19.0"
 scarb = { git = "https://github.com/software-mansion/scarb", rev = "0aa0f97b89a2e6f38f3b005cad2817dcaee7bf51" }
-dojo-world = { git = "https://github.com/dojoengine/dojo", rev = "f026a99d21d3b4259f458d11554ffd861615fdda" }
-sozo = { git = "https://github.com/dojoengine/dojo", rev = "f026a99d21d3b4259f458d11554ffd861615fdda" }
+dojo-world = { git = "https://github.com/dojoengine/dojo", rev = "4ae03cc7fc67fb32f106fbe21aacdc788901167b" }
 
 starknet = "0.3.0"
 toml = "0.7.4"

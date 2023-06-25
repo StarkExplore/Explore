@@ -6,14 +6,15 @@ declare -A dangers
 ADDRESS=0
 PLAYER_NAME=0 
 GAME_STATE=0
-# PLAYER_SCORE=0
+PLAYER_SCORE=0
 # seed=0
 # timestamp=0
 PLAYER_X=0
 PLAYER_Y=0
 PLAYER_LEVEL=0
 GRID_SIZE=0
-ACTION=0
+SHIELD=0
+KITS=0
 
 read_address() {
   file_path="Scarb.toml"
@@ -25,6 +26,7 @@ fetch_game() {
     command_output=$(sozo component entity Game $ADDRESS)
     IFS=$'\n' read -d '' -ra game_info <<< "$command_output"
     
+    echo $ADDRESS
     PLAYER_NAME=$(echo "${game_info[0]#0x}" | xxd -r -p)  
     GAME_STATE=$((16#${game_info[1]#0x}))
     PLAYER_SCORE=$((16#${game_info[2]#0x}))
@@ -34,7 +36,14 @@ fetch_game() {
     PLAYER_Y=$((16#${game_info[6]#0x}))
     PLAYER_LEVEL=$((16#${game_info[7]#0x}))
     GRID_SIZE=$((16#${game_info[8]#0x}))
-    # action=$((16#${game_info[9]#0x}))
+}
+
+fetch_inventory() {
+    command_output=$(sozo component entity Inventory $ADDRESS)
+    IFS=$'\n' read -d '' -ra game_info <<< "$command_output"
+    
+    SHIELD=$((16#${game_info[0]#0x}))
+    KITS=$((16#${game_info[1]#0x}))
 }
 
 fetch_tiles() {
@@ -45,10 +54,13 @@ fetch_tiles() {
           IFS=$'\n' read -d '' -ra tile_info <<< "$command_output"
 
           explored=$((16#${tile_info[0]#0x}))
-          danger=$((16#${tile_info[1]#0x}))
-          clue=$((16#${tile_info[2]#0x}))
-          x=$((16#${tile_info[3]#0x}))
-          y=$((16#${tile_info[4]#0x}))
+          min=$((16#${tile_info[1]#0x}))
+          danger=$((16#${tile_info[2]#0x}))
+          shield=$((16#${tile_info[3]#0x}))
+          kit=$((16#${tile_info[4]#0x}))
+          clue=$((16#${tile_info[5]#0x}))
+          x=$((16#${tile_info[6]#0x}))
+          y=$((16#${tile_info[7]#0x}))
 
           if [[ $explored -eq 1 ]]; then
               visited["$col,$row"]=$clue
@@ -66,11 +78,16 @@ fetch_tile() {
 }
 
 execute_move() {
-    sozo execute Move -c $1,$2
+    sozo execute Move -c $1
     explored=$(fetch_tile)
     if [[ $explored -eq 0 ]]; then
         sozo execute Reveal
     fi
+}
+
+execute_defuse() {
+    sozo execute Defuse -c $1
+    explored=$(fetch_tile)
 }
 
 execute_create() {

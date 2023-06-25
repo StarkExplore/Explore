@@ -11,7 +11,7 @@ use starknet::{
 
 use crate::components::{Game, Tile};
 use crate::minesweeper::MinesweeperInterface;
-use crate::movement::{Action, Direction};
+use crate::movement::Direction;
 
 type LocalAccount = SingleOwnerAccount<JsonRpcClient<HttpTransport>, LocalWallet>;
 
@@ -65,12 +65,13 @@ impl<'a> MinesweeperInterface for RpcGameInterface<'a> {
             .map(TryInto::try_into)?
     }
 
-    async fn create_game(&self, name: FieldElement) -> Result<FieldElement> {
-        self.execute_system_raw("Move", vec![name]).await
+    async fn make_move(&self, direction: Direction) -> Result<FieldElement> {
+        self.execute_system_raw("Move", vec![direction.into()])
+            .await
     }
 
-    async fn make_move(&self, action: Action, direction: Direction) -> Result<FieldElement> {
-        self.execute_system_raw("Move", vec![action.into(), direction.into()])
+    async fn defuse(&self, direction: Direction) -> Result<FieldElement> {
+        self.execute_system_raw("Defuse", vec![direction.into()])
             .await
     }
 
