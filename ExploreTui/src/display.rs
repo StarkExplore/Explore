@@ -147,19 +147,21 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(
 fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &[Tile]) {
     let mut s = String::new();
     // top edge
-    for _ in 0..game.size {
-        s.push_str("────")
+    s.push_str("╭");
+    for _ in 1..game.size {
+        s.push_str("─────")
     }
+    s.push_str("────╮");
     s.push('\n');
 
     // tile grid
     for j in 0..game.size {
         s.push('│');
         for i in 0..game.size {
-            let mut tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
+            let tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
                 Some(tile) => {
                     match (tile.mine, tile.defused, tile.explored) {
-                        (true, true, true) => String::from(CLUE_MINE[tile.clue as usize]),
+                        (true, _, true) => String::from(CLUE_MINE[tile.clue as usize]),
                         (false, _, true) => String::from(CLUE_NO_MINE[tile.clue as usize]),
                         _ => String::from(" ")
                     }
@@ -169,18 +171,30 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
 
             if (game.x, game.y) == (i, j) {
                 if !game.status {
-                    tile_body = String::from("💥");
+                    s.push_str(format!("<{}>│", String::from('💥')).as_str());  
+                } else {
+                    s.push_str(format!("<{} >│", tile_body).as_str());
                 }
-                s.push_str(format!("<{}>│", tile_body).as_str());
             } else {
-                s.push_str(format!(" {} │", tile_body).as_str());
+                s.push_str(format!(" {}  │", tile_body).as_str());
             }
         }
-        s.push('\n');
-        for _ in 0..game.size {
-            s.push_str("────")
+
+        // bottom edge
+        if j == game.size - 1 {
+            s.push_str("\n╰");
+            for _ in 1..game.size {
+                s.push_str("─────")
+            }
+            s.push_str("────╯");
+            s.push('\n');
+        } else { // separator
+            s.push_str("\n├");
+            for _ in 1..game.size {
+                s.push_str("─────")
+            }
+            s.push_str("────┤\n");
         }
-        s.push('\n');
     }
 
     let board = Paragraph::new(s).alignment(Alignment::Center);
@@ -284,16 +298,25 @@ fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
         .split(chunks[0]);
 
-    let board_chunk = split(
-        split(chunks[0], 3, Direction::Vertical)[1],
-        3,
-        Direction::Horizontal,
-    )[1];
+    let board_chunk = chunks[0];
     let sidebar = split(chunks[1], 2, Direction::Vertical);
     let score_chunk = sidebar[0];
     let instructions_chunk = sidebar[1];
 
-    render_game(f, board_chunk, &app.game, &app.tiles);
+    // Calculate the center of the board_chunk
+    let board_center_x = board_chunk.x + (board_chunk.width / 2_u16);
+    let board_center_y = board_chunk.y + (board_chunk.height / 2);
+
+    // Calculate the top-left position of the game within the board_chunk
+    let game_width = (board_chunk.width * 80 / 100) as u16; // Adjust as needed
+    let game_height = (board_chunk.height * 80 / 100) as u16; // Adjust as needed
+    let game_x = board_center_x - (game_width / 2);
+    let game_y = board_center_y - (game_height / 2);
+
+    // Create a Rect for the game within the board_chunk
+    let game_chunk = Rect::new(game_x, game_y, game_width, game_height);
+
+    render_game(f, game_chunk, &app.game, &app.tiles);
     render_instructions(f, instructions_chunk);
     render_score(f, score_chunk, &app.game, app.defuse_mode);
     render_info(f, error_chunk, &app.error_message);
