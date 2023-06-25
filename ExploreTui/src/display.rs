@@ -63,7 +63,7 @@ impl<I: MinesweeperInterface> App<I> {
             self.error_message = "Move failed. Remember you can only move once the current square has been revealed. You also cannot move outside the board.".to_string();
             Ok(())
         } else {
-            self.error_message = "Move successful".to_string();
+            self.error_message = if self.defuse_mode { "Defuse Successful".to_string() } else { "Move successful".to_string() };
             self.sync().await
         }
     }
@@ -159,7 +159,12 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
             let mut tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
                 Some(tile) => {
                     if tile.explored {
-                        format!("{}", tile.clue)
+                        if tile.mine {
+                            // this means it was defused
+                            String::from("✅")
+                        } else {
+                            format!("{}", tile.clue)
+                        }
                     } else {
                         String::from(" ")
                     }
