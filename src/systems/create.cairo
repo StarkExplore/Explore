@@ -20,21 +20,19 @@ mod Create {
         let y: u16 = size / 2_u16;
         commands::set_entity(
             ctx.caller_account.into(),
-            (
-                Game {
-                    name: name,
-                    status: true,
-                    score: 1_u64,
-                    seed: seed,
-                    commited_block_timestamp: starknet::get_block_timestamp(),
-                    x: x,
-                    y: y,
-                    level: LEVEL,
-                    size: size,
-                    shield: false,
-                    kits: n_mines,
-                }
-            )
+            (Game {
+                name: name,
+                status: true,
+                score: 1_u64,
+                seed: seed,
+                commited_block_timestamp: starknet::get_block_timestamp(),
+                x: x,
+                y: y,
+                level: LEVEL,
+                size: size,
+                shield: false,
+                kits: n_mines,
+            })
         );
 
         // [Command] Delete all existing tiles

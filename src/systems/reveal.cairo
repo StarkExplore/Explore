@@ -60,21 +60,19 @@ mod Reveal {
                 // [Compute] Updated game entity, game over
                 commands::set_entity(
                     ctx.caller_account.into(),
-                    (
-                        Game {
-                            name: game.name,
-                            status: false,
-                            score: game.score,
-                            seed: game.seed,
-                            commited_block_timestamp: game.commited_block_timestamp,
-                            x: game.x,
-                            y: game.y,
-                            level: game.level,
-                            size: game.size,
-                            shield: game.shield,
-                            kits: game.kits, 
-                        }
-                    )
+                    (Game {
+                        name: game.name,
+                        status: false,
+                        score: game.score,
+                        seed: game.seed,
+                        commited_block_timestamp: game.commited_block_timestamp,
+                        x: game.x,
+                        y: game.y,
+                        level: game.level,
+                        size: game.size,
+                        shield: game.shield,
+                        kits: game.kits,
+                    })
                 );
                 return ();
             // [Check] Shield, then remove the shield
@@ -117,21 +115,19 @@ mod Reveal {
             // [Compute] Updated game, increase score
             commands::set_entity(
                 ctx.caller_account.into(),
-                (
-                    Game {
-                        name: game.name,
-                        status: game.status,
-                        score: game.score + 1_u64,
-                        seed: game.seed,
-                        commited_block_timestamp: game.commited_block_timestamp,
-                        x: game.x,
-                        y: game.y,
-                        level: game.level,
-                        size: game.size,
-                        shield: shield,
-                        kits: game.kits + add_kit,
-                    }
-                )
+                (Game {
+                    name: game.name,
+                    status: game.status,
+                    score: game.score + 1_u64,
+                    seed: game.seed,
+                    commited_block_timestamp: game.commited_block_timestamp,
+                    x: game.x,
+                    y: game.y,
+                    level: game.level,
+                    size: game.size,
+                    shield: shield,
+                    kits: game.kits + add_kit,
+                })
             );
             return ();
         }
@@ -144,21 +140,19 @@ mod Reveal {
         let y: u16 = size / 2_u16;
         commands::set_entity(
             ctx.caller_account.into(),
-            (
-                Game {
-                    name: game.name,
-                    status: game.status,
-                    score: 1_u64, // reset score
-                    seed: seed,
-                    commited_block_timestamp: game.commited_block_timestamp,
-                    x: x,
-                    y: y,
-                    level: level, // level up
-                    size: size,
-                    shield: shield,
-                    kits: n_mines,
-                }
-            )
+            (Game {
+                name: game.name,
+                status: game.status,
+                score: 1_u64, // reset score
+                seed: seed,
+                commited_block_timestamp: game.commited_block_timestamp,
+                x: x,
+                y: y,
+                level: level, // level up
+                size: size,
+                shield: shield,
+                kits: n_mines,
+            })
         );
 
         // [Command] Delete all previous tiles

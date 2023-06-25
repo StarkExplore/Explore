@@ -42,21 +42,19 @@ mod Defuse {
         let time = starknet::get_block_timestamp();
         commands::set_entity(
             ctx.caller_account.into(),
-            (
-                Game {
-                    name: game.name,
-                    status: game.status,
-                    score: game.score,
-                    seed: game.seed,
-                    commited_block_timestamp: time,
-                    x: game.x,
-                    y: game.y,
-                    level: game.level,
-                    size: game.size,
-                    shield: game.shield,
-                    kits: game.kits - 1_u16, // Remove 1 kit 
-                }
-            )
+            (Game {
+                name: game.name,
+                status: game.status,
+                score: game.score,
+                seed: game.seed,
+                commited_block_timestamp: time,
+                x: game.x,
+                y: game.y,
+                level: game.level,
+                size: game.size,
+                shield: game.shield,
+                kits: game.kits - 1_u16, // Remove 1 kit 
+            })
         );
 
         // [Command] Create the defused Tile
@@ -68,9 +66,9 @@ mod Defuse {
             (ctx.caller_account, x, y).into(),
             (
                 Tile {
-                    explored: false,  // Unexplored
+                    explored: false, // Unexplored
                     mine: mine,
-                    danger: false,  // Not dangerous
+                    danger: false, // Not dangerous
                     shield: shield,
                     kit: kit,
                     clue: clue,
@@ -118,8 +116,7 @@ mod Test {
         let mut finals = IWorldDispatcher {
             contract_address: world_address
         }.entity('Game'.into(), caller.into(), 0, 0);
-        let final = serde::Serde::<Game>::deserialize(ref finals)
-            .expect('deserialization failed');
+        let final = serde::Serde::<Game>::deserialize(ref finals).expect('deserialization failed');
 
         // [Check] Move
         assert(final.kits == initial.kits - 1, 'Defuse left failed');

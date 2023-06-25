@@ -27,21 +27,19 @@ mod Move {
         let time = starknet::get_block_timestamp();
         commands::set_entity(
             ctx.caller_account.into(),
-            (
-                Game {
-                    name: game.name,
-                    status: game.status,
-                    score: game.score,
-                    seed: game.seed,
-                    commited_block_timestamp: time,
-                    x: x,
-                    y: y,
-                    level: game.level,
-                    size: game.size,
-                    shield: game.shield,
-                    kits: game.kits,
-                }
-            )
+            (Game {
+                name: game.name,
+                status: game.status,
+                score: game.score,
+                seed: game.seed,
+                commited_block_timestamp: time,
+                x: x,
+                y: y,
+                level: game.level,
+                size: game.size,
+                shield: game.shield,
+                kits: game.kits,
+            })
         );
         return ();
     }
