@@ -126,12 +126,12 @@ async fn run_app<B: Backend, I: MinesweeperInterface>(
                 KeyCode::Char('4') | KeyCode::Left => {
                     app.make_move(movement::Direction::Left).await?
                 }
-                KeyCode::Char('5') | KeyCode::Right => {
+                KeyCode::Char('6') | KeyCode::Right => {
                     app.make_move(movement::Direction::Right).await?
                 }
-                KeyCode::Char('6') => app.make_move(movement::Direction::UpLeft).await?,
-                KeyCode::Char('7') | KeyCode::Up => app.make_move(movement::Direction::Up).await?,
-                KeyCode::Char('8') => app.make_move(movement::Direction::UpRight).await?,
+                KeyCode::Char('7') => app.make_move(movement::Direction::UpLeft).await?,
+                KeyCode::Char('8') | KeyCode::Up => app.make_move(movement::Direction::Up).await?,
+                KeyCode::Char('9') => app.make_move(movement::Direction::UpRight).await?,
                 KeyCode::Char('r') => app.reveal().await?,
                 KeyCode::Char(' ') => app.defuse_mode = !app.defuse_mode,
                 _ => {}
@@ -191,10 +191,10 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     2: Move down
     3: Move down right
     4: Move left
-    5: Move right
-    6: Move up left
-    7: Move up
-    8: Move up right
+    6: Move right
+    7: Move up left
+    8: Move up
+    9: Move up right
 
     R: Reval current tile
     <Space>: Toggle Defuse Mode
