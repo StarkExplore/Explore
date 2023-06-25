@@ -27,21 +27,19 @@ mod Move {
         let time = starknet::get_block_timestamp();
         commands::set_entity(
             ctx.caller_account.into(),
-            (
-                Game {
-                    name: game.name,
-                    status: game.status,
-                    score: game.score,
-                    seed: game.seed,
-                    commited_block_timestamp: time,
-                    x: x,
-                    y: y,
-                    level: game.level,
-                    size: game.size,
-                    shield: game.shield,
-                    kits: game.kits,
-                }
-            )
+            (Game {
+                name: game.name,
+                status: game.status,
+                score: game.score,
+                seed: game.seed,
+                commited_block_timestamp: time,
+                x: x,
+                y: y,
+                level: game.level,
+                size: game.size,
+                shield: game.shield,
+                kits: game.kits,
+            })
         );
         return ();
     }
@@ -71,7 +69,7 @@ mod Test {
         let initial = serde::Serde::<Game>::deserialize(ref initials)
             .expect('deserialization failed');
 
-        // [Execute] Move to left and commit to Safe
+        // [Execute] Move to left
         let mut calldata = array::ArrayTrait::<felt252>::new();
         calldata.append(0);
         let mut res = world.execute('Move'.into(), calldata.span());
@@ -96,7 +94,7 @@ mod Test {
         let world_address = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };
 
-        // [Execute] Move to left and commit safe
+        // [Execute] Move to left
         let mut calldata = array::ArrayTrait::<felt252>::new();
         calldata.append(0);
         let mut res = world.execute('Move'.into(), calldata.span());

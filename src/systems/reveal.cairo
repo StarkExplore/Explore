@@ -31,7 +31,20 @@ mod Reveal {
         let tile_option = commands::<Tile>::try_entity(tile_sk);
         let tile = match tile_option {
             Option::Some(tile) => {
-                tile
+                let mine = TileTrait::is_mine(game.seed, game.level, game.x, game.y);
+                let shield = TileTrait::is_shield(game.seed, game.level, game.x, game.y);
+                let kit = TileTrait::is_kit(game.seed, game.level, game.x, game.y);
+                let clue = TileTrait::get_clue(game.seed, game.level, game.size, game.x, game.y);
+                Tile {
+                    explored: tile.explored,
+                    defused: tile.defused,
+                    mine: mine,
+                    shield: shield,
+                    kit: kit,
+                    clue: clue,
+                    x: game.x,
+                    y: game.y,
+                }
             },
             Option::None(_) => {
                 let mine = TileTrait::is_mine(game.seed, game.level, game.x, game.y);
@@ -40,8 +53,8 @@ mod Reveal {
                 let clue = TileTrait::get_clue(game.seed, game.level, game.size, game.x, game.y);
                 Tile {
                     explored: false,
+                    defused: false,
                     mine: mine,
-                    danger: mine,
                     shield: shield,
                     kit: kit,
                     clue: clue,
@@ -52,16 +65,19 @@ mod Reveal {
         };
         assert(!tile.explored, 'Current tile must be unexplored');
 
-        // [Check] Tile is dangerous
+        // [Check] Tile is a mine and not defused, then update shield and game status
         let mut shield = game.shield;
-        if tile.danger {
-            // [Check] No shield
-            if !game.shield {
-                // [Compute] Updated game entity, game over
-                commands::set_entity(
-                    ctx.caller_account.into(),
-                    (
-                        Game {
+
+        if tile.mine {
+            if !tile.defused {
+                // [Check] Shield, then remove the shield, else game over
+                if game.shield {
+                    shield = false;
+                } else {
+                    // [Compute] Updated game entity, game over
+                    commands::set_entity(
+                        ctx.caller_account.into(),
+                        (Game {
                             name: game.name,
                             status: false,
                             score: game.score,
@@ -72,14 +88,11 @@ mod Reveal {
                             level: game.level,
                             size: game.size,
                             shield: game.shield,
-                            kits: game.kits, 
-                        }
-                    )
-                );
-                return ();
-            // [Check] Shield, then remove the shield
-            } else {
-                shield = false;
+                            kits: game.kits,
+                        })
+                    );
+                    return ();
+                }
             }
         }
 
@@ -100,8 +113,8 @@ mod Reveal {
             (
                 Tile {
                     explored: true,
+                    defused: tile.defused,
                     mine: tile.mine,
-                    danger: tile.danger,
                     shield: tile.shield,
                     kit: tile.kit,
                     clue: tile.clue,
@@ -117,21 +130,19 @@ mod Reveal {
             // [Compute] Updated game, increase score
             commands::set_entity(
                 ctx.caller_account.into(),
-                (
-                    Game {
-                        name: game.name,
-                        status: game.status,
-                        score: game.score + 1_u64,
-                        seed: game.seed,
-                        commited_block_timestamp: game.commited_block_timestamp,
-                        x: game.x,
-                        y: game.y,
-                        level: game.level,
-                        size: game.size,
-                        shield: shield,
-                        kits: game.kits + add_kit,
-                    }
-                )
+                (Game {
+                    name: game.name,
+                    status: game.status,
+                    score: game.score + 1_u64,
+                    seed: game.seed,
+                    commited_block_timestamp: game.commited_block_timestamp,
+                    x: game.x,
+                    y: game.y,
+                    level: game.level,
+                    size: game.size,
+                    shield: shield,
+                    kits: game.kits + add_kit,
+                })
             );
             return ();
         }
@@ -144,21 +155,19 @@ mod Reveal {
         let y: u16 = size / 2_u16;
         commands::set_entity(
             ctx.caller_account.into(),
-            (
-                Game {
-                    name: game.name,
-                    status: game.status,
-                    score: 1_u64, // reset score
-                    seed: seed,
-                    commited_block_timestamp: game.commited_block_timestamp,
-                    x: x,
-                    y: y,
-                    level: level, // level up
-                    size: size,
-                    shield: shield,
-                    kits: n_mines,
-                }
-            )
+            (Game {
+                name: game.name,
+                status: game.status,
+                score: 1_u64, // reset score
+                seed: seed,
+                commited_block_timestamp: game.commited_block_timestamp,
+                x: x,
+                y: y,
+                level: level, // level up
+                size: size,
+                shield: shield,
+                kits: n_mines,
+            })
         );
 
         // [Command] Delete all previous tiles
@@ -171,9 +180,24 @@ mod Reveal {
             let mut col: u16 = idx % size;
             let mut row: u16 = idx / size;
 
-            // [Error] The command has no effect, then use ctx function
+            // [Error] Delete entity has no effect once deployed
             let mut tile_sk: Query = (ctx.caller_account, col, row).into();
-            ctx.world.delete_entity(ctx, 'Tile'.into(), tile_sk);
+            // ctx.world.delete_entity(ctx, 'Tile'.into(), tile_sk.into());
+
+            // [Workaround] Reset state for all tiles
+            commands::set_entity(
+                tile_sk.into(),
+                (Tile {
+                    explored: false,
+                    defused: false,
+                    mine: false,
+                    shield: false,
+                    kit: false,
+                    clue: 0_u8,
+                    x: 0_u16,
+                    y: 0_u16,
+                })
+            );
 
             idx += 1_u16;
         };
@@ -188,8 +212,8 @@ mod Reveal {
             (
                 Tile {
                     explored: true,
+                    defused: false,
                     mine: mine,
-                    danger: mine,
                     shield: shield,
                     kit: kit,
                     clue: clue,
@@ -279,7 +303,7 @@ mod Test {
         assert(tile.x == game.x, 'wrong x');
         assert(tile.y == game.y, 'wrong y');
         assert(tile.explored == true, 'tile not explored');
-        assert(tile.danger == false, 'wrong danger');
+        assert(tile.defused == false, 'wrong defused');
         assert(tile.shield == false, 'wrong shield');
         assert(tile.kit == true, 'wrong kit');
         assert(tile.clue == 1_u8, 'wrong clue');
@@ -321,7 +345,7 @@ mod Test {
         assert(tile.x == game.x, 'wrong x');
         assert(tile.y == game.y, 'wrong y');
         assert(tile.explored == true, 'tile not explored');
-        assert(tile.danger == false, 'wrong danger');
+        assert(tile.defused == false, 'wrong defused');
         assert(tile.shield == true, 'wrong shield');
         assert(tile.kit == false, 'wrong kit');
         assert(tile.clue == 0_u8, 'wrong clue');

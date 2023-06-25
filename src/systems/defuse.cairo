@@ -42,40 +42,34 @@ mod Defuse {
         let time = starknet::get_block_timestamp();
         commands::set_entity(
             ctx.caller_account.into(),
-            (
-                Game {
-                    name: game.name,
-                    status: game.status,
-                    score: game.score,
-                    seed: game.seed,
-                    commited_block_timestamp: time,
-                    x: game.x,
-                    y: game.y,
-                    level: game.level,
-                    size: game.size,
-                    shield: game.shield,
-                    kits: game.kits - 1_u16, // Remove 1 kit 
-                }
-            )
+            (Game {
+                name: game.name,
+                status: game.status,
+                score: game.score,
+                seed: game.seed,
+                commited_block_timestamp: time,
+                x: game.x,
+                y: game.y,
+                level: game.level,
+                size: game.size,
+                shield: game.shield,
+                kits: game.kits - 1_u16, // Remove 1 kit 
+            })
         );
 
-        // [Command] Create the defused Tile
-        let clue = TileTrait::get_clue(game.seed, game.level, game.size, x, y);
-        let mine = TileTrait::is_mine(game.seed, game.level, x, y);
-        let shield = TileTrait::is_shield(game.seed, game.level, x, y);
-        let kit = TileTrait::is_kit(game.seed, game.level, x, y);
+        // [Command] Create the defused Tile, with unknown attributes for now
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
             (
                 Tile {
-                    explored: false,  // Unexplored
-                    mine: mine,
-                    danger: false,  // Not dangerous
-                    shield: shield,
-                    kit: kit,
-                    clue: clue,
-                    x: x,
-                    y: y
+                    explored: false, // Unexplored
+                    defused: true,
+                    mine: false,
+                    shield: false,
+                    kit: false,
+                    clue: 0_u8,
+                    x: 0_u16,
+                    y: 0_u16
                 },
             )
         );
@@ -92,13 +86,13 @@ mod Test {
     use explore::components::game::{Game, GameTrait};
     use explore::components::tile::{Tile, TileTrait};
     use explore::systems::{create::Create};
-    use explore::tests::setup::spawn_defuse_game;
+    use explore::tests::setup::spawn_game;
 
     #[test]
     #[available_gas(100000000)]
     fn test_defuse_left() {
         // [Setup] World
-        let world_address = spawn_defuse_game();
+        let world_address = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };
         let caller = starknet::get_caller_address();
 
@@ -118,10 +112,7 @@ mod Test {
         let mut finals = IWorldDispatcher {
             contract_address: world_address
         }.entity('Game'.into(), caller.into(), 0, 0);
-        let final = serde::Serde::<Game>::deserialize(ref finals)
-            .expect('deserialization failed');
-
-        // [Check] Move
+        let final = serde::Serde::<Game>::deserialize(ref finals).expect('deserialization failed');
         assert(final.kits == initial.kits - 1, 'Defuse left failed');
 
         // [Check] Tile state
@@ -132,6 +123,6 @@ mod Test {
         let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
 
         assert(tile.explored == false, 'wrong explored');
-        assert(tile.danger == false, 'wrong danger');
+        assert(tile.defused == true, 'wrong defused');
     }
 }
