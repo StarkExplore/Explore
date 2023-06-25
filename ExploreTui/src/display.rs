@@ -16,6 +16,9 @@ use tui::{
     Frame, Terminal,
 };
 
+const CLUE_NO_MINE: [char; 10] = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
+const CLUE_MINE: [char; 10] = ['⓿', '❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
+
 #[derive(Default)]
 struct App<I> {
     game: Game,
@@ -155,16 +158,10 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
         for i in 0..game.size {
             let mut tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
                 Some(tile) => {
-                    if tile.defused {
-                        if tile.mine {
-                            String::from("✅")
-                        } else {
-                            String::from("❌")
-                        }
-                    } else if tile.explored {
-                        format!("{}", tile.clue)
-                    } else {
-                        String::from(" ")
+                    match (tile.mine, tile.defused, tile.explored) {
+                        (true, true, true) => String::from(CLUE_MINE[tile.clue as usize]),
+                        (false, _, true) => String::from(CLUE_NO_MINE[tile.clue as usize]),
+                        _ => String::from(" ")
                     }
                 }
                 None => String::from(" "),
