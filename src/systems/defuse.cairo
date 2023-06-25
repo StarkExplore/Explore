@@ -81,7 +81,7 @@ mod Test {
     use traits::Into;
     use array::{ArrayTrait, SpanTrait};
     use option::OptionTrait;
-    use dojo_core::storage::query::Query;
+    use dojo_core::database::query::Query;
     use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
     use explore::components::game::{Game, GameTrait};
     use explore::components::tile::{Tile, TileTrait};
