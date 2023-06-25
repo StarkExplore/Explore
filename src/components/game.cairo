@@ -93,3 +93,68 @@ impl GameImpl of GameTrait {
         }
     }
 }
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_left() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Left(()));
+    assert(x == 0_u16, 'wrong x');
+    assert(y == 1_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_up_left() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::UpLeft(()));
+    assert(x == 0_u16, 'wrong x');
+    assert(y == 0_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_up() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Up(()));
+    assert(x == 1_u16, 'wrong x');
+    assert(y == 0_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_up_right() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::UpRight(()));
+    assert(x == 2_u16, 'wrong x');
+    assert(y == 0_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_right() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Right(()));
+    assert(x == 2_u16, 'wrong x');
+    assert(y == 1_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_down_right() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::DownRight(()));
+    assert(x == 2_u16, 'wrong x');
+    assert(y == 2_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_down() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::Down(()));
+    assert(x == 1_u16, 'wrong x');
+    assert(y == 2_u16, 'wrong y');
+}
+
+#[test]
+#[available_gas(100000000)]
+fn test_next_position_to_down_left() {
+    let (x, y) = GameTrait::next_position(1_u16, 1_u16, 3_u16, Direction::DownLeft(()));
+    assert(x == 0_u16, 'wrong x');
+    assert(y == 2_u16, 'wrong y');
+}
+
