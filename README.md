@@ -6,9 +6,6 @@
 <img src="https://img.shields.io/github/stars/starkexplore/explore?style=social"/>
 </a>
 
-[![discord](https://img.shields.io/badge/join-dojo-green?logo=discord&logoColor=white)](https://discord.gg/wW7UtwFW)
-
-
 # Explore
 
 ## Game Concept
@@ -17,7 +14,7 @@ A reimagined version of Minesweeper with elements of loot survivor and features 
 
 ## Gameplay
 
-Players navigate through a grid-based session map, uncovering hidden squares to progress. 
+Players navigate through a grid-based session map, uncovering hidden squares to progress.
 
 ## Development
 
@@ -73,6 +70,21 @@ sozo migrate
 ```
 
 Congratulations! You've successfully setup and deployed your first Dojo Autonomous World.
+
+### Step 6: Play the game
+
+Switch to ExploreTui directory:
+
+```bash
+cd ExploreTui
+```
+
+build and run the rust UI:
+
+```bash
+cargo build
+cargo run
+```
 
 ---
 
