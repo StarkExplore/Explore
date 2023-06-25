@@ -1,7 +1,7 @@
 use traits::Into;
 use array::{ArrayTrait, SpanTrait};
 use option::OptionTrait;
-use dojo_core::database::query::Query;
+use dojo_core::storage::query::Query;
 use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
 use explore::components::{game::Game, tile::Tile};
 use explore::systems::{create::Create};
