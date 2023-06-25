@@ -11,6 +11,8 @@ pub struct Game {
     pub y: u16,
     pub level: u8,
     pub size: u16,
+    pub shield: bool,
+    pub kits: u16,
 }
 
 impl TryFrom<Vec<FieldElement>> for Game {
@@ -27,6 +29,8 @@ impl TryFrom<Vec<FieldElement>> for Game {
             y: value[6].try_into()?,
             level: value[7].try_into()?,
             size: value[8].try_into()?,
+            shield: value[9] != FieldElement::ZERO,
+            kits: value[10].try_into()?,
         })
     }
 }

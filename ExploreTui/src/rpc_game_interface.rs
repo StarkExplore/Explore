@@ -9,7 +9,7 @@ use starknet::{
     signers::LocalWallet,
 };
 
-use crate::components::{Game, Inventory, Tile};
+use crate::components::{Game, Tile};
 use crate::minesweeper::MinesweeperInterface;
 use crate::movement::Direction;
 
@@ -61,12 +61,6 @@ impl<'a> MinesweeperInterface for RpcGameInterface<'a> {
 
     async fn get_tile(&self, x: FieldElement, y: FieldElement) -> Result<Tile> {
         self.get_component_raw("Tile", vec![self.world.account.address(), x, y])
-            .await
-            .map(TryInto::try_into)?
-    }
-
-    async fn get_inventory(&self) -> Result<Inventory> {
-        self.get_component_raw("Inventory", vec![self.world.account.address()])
             .await
             .map(TryInto::try_into)?
     }
