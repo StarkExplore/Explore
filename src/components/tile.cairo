@@ -5,13 +5,15 @@ use poseidon::poseidon_hash_span;
 
 use explore::constants::{BASE_SEED, START_SIZE};
 
-// @notice: This is the tile component used to know what is explored
+// @notice This is the tile component used to know what is explored
 // and what is not. It also contains the number of dangers around.
-// @param explored: 0: unexplored, 1: explored
-// @param danger: 0: safe, 1: unsafe
-// @param clue: Number of dangers around
-// @param x: x coordinate
-// @param y: y coordinate
+// @param explored Boolean which is true if explored, false otherwise
+// @param danger Boolean which is true if tile has undefused mine, false otherwise
+// @param shield Boolean which is true if tile has shield, false otherwise
+// @param kit Boolean which is true if tile has kit, false otherwise
+// @param clue The number of initial dangers around
+// @param x The tile x coordinate
+// @param y The tile y coordinate
 #[derive(Component, Copy, Drop, Serde)]
 struct Tile {
     explored: bool,
@@ -24,6 +26,8 @@ struct Tile {
     y: u16,
 }
 
+// @notice The TileTrait definition
+// @dev Methods relative to Tile logic are defined here
 trait TileTrait {
     fn get_clue(seed: felt252, level: u8, size: u16, x: u16, y: u16) -> u8;
     fn is_mine(seed: felt252, level: u8, x: u16, y: u16) -> bool;
@@ -31,6 +35,8 @@ trait TileTrait {
     fn is_kit(seed: felt252, level: u8, x: u16, y: u16) -> bool;
 }
 
+// @notice The implementation of the TileTrait
+// @dev Methods relative to Tile logic are implemented here
 impl TileImpl of TileTrait {
     fn get_clue(seed: felt252, level: u8, size: u16, x: u16, y: u16) -> u8 {
         // [Compute] Dangerousness of each neighbor based on their position

@@ -114,6 +114,8 @@ mod Test {
         assert(game.y == 3 / 2_u16, 'wrong y');
         assert(game.level == LEVEL, 'wrong level');
         assert(game.size == 3, 'wrong size');
+        assert(game.shield == false, 'wrong shield');
+        assert(game.kits == 1_u16, 'wrong kits');
 
         // [Check] Tile state
         let tile_id: Query = (caller, game.x, game.y).into();

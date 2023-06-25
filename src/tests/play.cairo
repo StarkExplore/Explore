@@ -58,7 +58,7 @@ fn test_play_revert_game_over() {
     let mut calldata = array::ArrayTrait::<felt252>::new();
     let mut res = world.execute('Reveal'.into(), calldata.span());
 
-    // [Execute] Move to left and commit safe
+    // [Execute] Move to left
     let mut calldata = array::ArrayTrait::<felt252>::new();
     calldata.append(0);
     let mut res = world.execute('Move'.into(), calldata.span());

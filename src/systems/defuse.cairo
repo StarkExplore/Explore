@@ -87,8 +87,10 @@ mod Test {
     use traits::Into;
     use array::{ArrayTrait, SpanTrait};
     use option::OptionTrait;
+    use dojo_core::database::query::Query;
     use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
     use explore::components::game::{Game, GameTrait};
+    use explore::components::tile::{Tile, TileTrait};
     use explore::systems::{create::Create};
     use explore::tests::setup::spawn_defuse_game;
 
@@ -121,5 +123,15 @@ mod Test {
 
         // [Check] Move
         assert(final.kits == initial.kits - 1, 'Defuse left failed');
+
+        // [Check] Tile state
+        let tile_id: Query = (caller, final.x - 1_u16, final.y).into();
+        let mut tiles = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Tile'.into(), tile_id.into(), 0, 0);
+        let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
+
+        assert(tile.explored == false, 'wrong explored');
+        assert(tile.danger == false, 'wrong danger');
     }
 }
