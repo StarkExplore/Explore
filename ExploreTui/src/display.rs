@@ -227,7 +227,7 @@ fn render_score<B: Backend>(
     Level: {}
     Score: {}
 
-    Shield {}
+    Shield: {}
     Defuses kits Remaining: {}
 
    Move Mode: {}

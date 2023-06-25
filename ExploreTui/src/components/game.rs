@@ -11,7 +11,6 @@ pub struct Game {
     pub y: u16,
     pub level: u8,
     pub size: u16,
-    pub action: u8,
 }
 
 impl TryFrom<Vec<FieldElement>> for Game {
@@ -28,7 +27,6 @@ impl TryFrom<Vec<FieldElement>> for Game {
             y: value[6].try_into()?,
             level: value[7].try_into()?,
             size: value[8].try_into()?,
-            action: value[9].try_into()?,
         })
     }
 }
