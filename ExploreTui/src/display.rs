@@ -49,12 +49,12 @@ impl<I: MinesweeperInterface> App<I> {
     }
 
     pub async fn make_move(&mut self, direction: movement::Direction) -> Result<()> {
-        let action = if self.defuse_mode {
-            movement::Action::Safe
+        let result = if self.defuse_mode {
+            self.interface.defuse(direction).await
         } else {
-            movement::Action::Unsafe
+            self.interface.make_move(direction).await
         };
-        if let Err(_e) = self.interface.make_move(action, direction).await {
+        if let Err(_e) = result {
             // unfortunately these errors don't propagate the failure reasons from the contract
             // we can infer our own but they may be wrong
             self.error_message = "Move failed. Remember you can only move once the current square has been revealed. You also cannot move outside the board.".to_string();
