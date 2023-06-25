@@ -3,8 +3,8 @@ use starknet::core::types::FieldElement;
 #[derive(Debug)]
 pub struct Tile {
     pub explored: bool,
+    pub defused: bool,
     pub mine: bool,
-    pub danger: bool,
     pub shield: bool,
     pub kit: bool,
     pub clue: u8,
@@ -18,8 +18,8 @@ impl TryFrom<Vec<FieldElement>> for Tile {
     fn try_from(value: Vec<FieldElement>) -> Result<Self, Self::Error> {
         Ok(Tile {
             explored: value[0] != FieldElement::ZERO,
-            mine: value[1] != FieldElement::ZERO,
-            danger: value[2] != FieldElement::ZERO,
+            defused: value[1] != FieldElement::ZERO,
+            mine: value[2] != FieldElement::ZERO,
             shield: value[3] != FieldElement::ZERO,
             kit: value[4] != FieldElement::ZERO,
             clue: value[5].try_into()?,

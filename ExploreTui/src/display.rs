@@ -155,13 +155,14 @@ fn render_game<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, tiles: &
         for i in 0..game.size {
             let mut tile_body = match tiles.iter().find(|tile| tile.x == i && tile.y == j) {
                 Some(tile) => {
-                    if tile.explored {
+                    if tile.defused {
                         if tile.mine {
-                            // this means it was defused
                             String::from("✅")
                         } else {
-                            format!("{}", tile.clue)
+                            String::from("❌")
                         }
+                    } else if tile.explored {
+                        format!("{}", tile.clue)
                     } else {
                         String::from(" ")
                     }
