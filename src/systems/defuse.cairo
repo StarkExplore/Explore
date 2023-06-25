@@ -3,7 +3,6 @@ mod Defuse {
     use array::ArrayTrait;
     use traits::Into;
     use explore::components::game::{Game, GameTrait, Direction};
-    use explore::components::inventory::Inventory;
     use explore::components::tile::{Tile, TileTrait};
 
     fn execute(ctx: Context, direction: Direction) {
@@ -37,11 +36,9 @@ mod Defuse {
         assert(!revealed, 'Current tile must be unrevealed');
 
         // [Check] Enough kits
-        let inventory = commands::<Inventory>::entity(ctx.caller_account.into());
-        assert(inventory.kits > 0_u16, 'Not enough kits');
+        assert(game.kits > 0_u16, 'Not enough kits');
 
         // [Command] Update game entity
-        let inventory = commands::<Inventory>::entity(ctx.caller_account.into());
         let time = starknet::get_block_timestamp();
         commands::set_entity(
             ctx.caller_account.into(),
@@ -56,8 +53,8 @@ mod Defuse {
                     y: game.y,
                     level: game.level,
                     size: game.size,
-                    }, Inventory {
-                    shield: inventory.shield, kits: inventory.kits - 1_u16, // Remove 1 kit 
+                    shield: game.shield,
+                    kits: game.kits - 1_u16, // Remove 1 kit 
                 }
             )
         );
@@ -71,9 +68,9 @@ mod Defuse {
             (ctx.caller_account, x, y).into(),
             (
                 Tile {
-                    explored: true,
+                    explored: false,  // Unexplored
                     mine: mine,
-                    danger: false,
+                    danger: false,  // Not dangerous
                     shield: shield,
                     kit: kit,
                     clue: clue,
@@ -90,8 +87,10 @@ mod Test {
     use traits::Into;
     use array::{ArrayTrait, SpanTrait};
     use option::OptionTrait;
+    use dojo_core::database::query::Query;
     use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
-    use explore::components::{game::Game, tile::Tile, inventory::Inventory};
+    use explore::components::game::{Game, GameTrait};
+    use explore::components::tile::{Tile, TileTrait};
     use explore::systems::{create::Create};
     use explore::tests::setup::spawn_defuse_game;
 
@@ -106,8 +105,8 @@ mod Test {
         // [Check] Game state
         let mut initials = IWorldDispatcher {
             contract_address: world_address
-        }.entity('Inventory'.into(), caller.into(), 0, 0);
-        let initial = serde::Serde::<Inventory>::deserialize(ref initials)
+        }.entity('Game'.into(), caller.into(), 0, 0);
+        let initial = serde::Serde::<Game>::deserialize(ref initials)
             .expect('deserialization failed');
 
         // [Execute] Defuse left
@@ -118,11 +117,21 @@ mod Test {
         // [Check] Game state
         let mut finals = IWorldDispatcher {
             contract_address: world_address
-        }.entity('Inventory'.into(), caller.into(), 0, 0);
-        let final = serde::Serde::<Inventory>::deserialize(ref finals)
+        }.entity('Game'.into(), caller.into(), 0, 0);
+        let final = serde::Serde::<Game>::deserialize(ref finals)
             .expect('deserialization failed');
 
         // [Check] Move
         assert(final.kits == initial.kits - 1, 'Defuse left failed');
+
+        // [Check] Tile state
+        let tile_id: Query = (caller, final.x - 1_u16, final.y).into();
+        let mut tiles = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Tile'.into(), tile_id.into(), 0, 0);
+        let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
+
+        assert(tile.explored == false, 'wrong explored');
+        assert(tile.danger == false, 'wrong danger');
     }
 }

@@ -9,7 +9,6 @@ mod Reveal {
     use starknet::ContractAddress;
 
     use explore::components::game::Game;
-    use explore::components::inventory::Inventory;
     use explore::components::tile::{Tile, TileTrait, level};
     use explore::constants::SECURITY_OFFSET;
 
@@ -19,7 +18,6 @@ mod Reveal {
     fn execute(ctx: Context) {
         // [Check] Game is not over
         let game = commands::<Game>::entity(ctx.caller_account.into());
-        let inventory = commands::<Inventory>::entity(ctx.caller_account.into());
         assert(game.status, 'Game is finished');
 
         // [Check] Two moves in a single block security
@@ -55,9 +53,10 @@ mod Reveal {
         assert(!tile.explored, 'Current tile must be unexplored');
 
         // [Check] Tile is dangerous
+        let mut shield = game.shield;
         if tile.danger {
             // [Check] No shield
-            if !inventory.shield {
+            if !game.shield {
                 // [Compute] Updated game entity, game over
                 commands::set_entity(
                     ctx.caller_account.into(),
@@ -72,24 +71,20 @@ mod Reveal {
                             y: game.y,
                             level: game.level,
                             size: game.size,
-                            }, Inventory {
-                            shield: inventory.shield, kits: inventory.kits, 
+                            shield: game.shield,
+                            kits: game.kits, 
                         }
                     )
                 );
                 return ();
+            // [Check] Shield, then remove the shield
             } else {
-                // [Compute] Remove shield
-                let inventory = Inventory { shield: false, kits: inventory.kits,  };
+                shield = false;
             }
         }
 
         // [Compute] Tile is a shield
-        let mut shield = false;
         if tile.shield {
-            shield = true;
-        };
-        if inventory.shield {
             shield = true;
         };
 
@@ -133,8 +128,8 @@ mod Reveal {
                         y: game.y,
                         level: game.level,
                         size: game.size,
-                        }, Inventory {
-                        shield: shield, kits: inventory.kits + add_kit, 
+                        shield: shield,
+                        kits: game.kits + add_kit,
                     }
                 )
             );
@@ -160,9 +155,8 @@ mod Reveal {
                     y: y,
                     level: level, // level up
                     size: size,
-                    }, Inventory {
-                    shield: shield, // Set to true if Tile is shield
-                     kits: n_mines,
+                    shield: shield,
+                    kits: n_mines,
                 }
             )
         );
@@ -250,7 +244,7 @@ mod Test {
 
     #[test]
     #[available_gas(1000000000)]
-    fn test_reveal_safe_position() {
+    fn test_reveal_safe_kit_position() {
         // [Setup] World
         let world_address = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };
@@ -259,6 +253,49 @@ mod Test {
         // [Execute] Move up
         let mut calldata = array::ArrayTrait::<felt252>::new();
         calldata.append(2);
+        let mut res = world.execute('Move'.into(), calldata.span());
+
+        // [Execute] Reveal
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        let mut res = world.execute('Reveal'.into(), calldata.span());
+
+        // [Check] Game state
+        let mut games = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Game'.into(), caller.into(), 0, 0);
+        let game = serde::Serde::<Game>::deserialize(ref games)
+            .expect('game deserialization failed');
+        assert(game.score == 2_u64, 'wrong score');
+        assert(game.kits == 2_u16, 'wrong kits');
+
+        // [Check] Tile state
+        let mut tiles = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Tile'.into(), (caller, game.x, game.y).into(), 0, 0);
+        let tile = serde::Serde::<Tile>::deserialize(ref tiles)
+            .expect('tile deserialization failed');
+
+        // [Check] Reveal has been operated
+        assert(tile.x == game.x, 'wrong x');
+        assert(tile.y == game.y, 'wrong y');
+        assert(tile.explored == true, 'tile not explored');
+        assert(tile.danger == false, 'wrong danger');
+        assert(tile.shield == false, 'wrong shield');
+        assert(tile.kit == true, 'wrong kit');
+        assert(tile.clue == 1_u8, 'wrong clue');
+    }
+
+    #[test]
+    #[available_gas(1000000000)]
+    fn test_reveal_safe_shield_position() {
+        // [Setup] World
+        let world_address = spawn_game();
+        let world = IWorldDispatcher { contract_address: world_address };
+        let caller = starknet::get_caller_address();
+
+        // [Execute] Move down-left
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(7);
         let mut res = world.execute('Move'.into(), calldata.span());
 
         // [Execute] Reveal
@@ -285,9 +322,53 @@ mod Test {
         assert(tile.y == game.y, 'wrong y');
         assert(tile.explored == true, 'tile not explored');
         assert(tile.danger == false, 'wrong danger');
-        assert(tile.shield == false, 'wrong shield');
-        assert(tile.kit == true, 'wrong kit');
-        assert(tile.clue == 1_u8, 'wrong clue');
+        assert(tile.shield == true, 'wrong shield');
+        assert(tile.kit == false, 'wrong kit');
+        assert(tile.clue == 0_u8, 'wrong clue');
+    }
+
+    #[test]
+    #[available_gas(1000000000)]
+    fn test_reveal_take_shield_and_move_unsafe() {
+        // [Setup] World
+        let world_address = spawn_game();
+        let world = IWorldDispatcher { contract_address: world_address };
+        let caller = starknet::get_caller_address();
+
+        // [Execute] Move down left
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(7);
+        let mut res = world.execute('Move'.into(), calldata.span());
+
+        // [Execute] Reveal
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        let mut res = world.execute('Reveal'.into(), calldata.span());
+
+        // [Execute] Move top right, already explored
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(3);
+        let mut res = world.execute('Move'.into(), calldata.span());
+
+        // [Execute] Move right
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(4);
+        let mut res = world.execute('Move'.into(), calldata.span());
+
+        // [Execute] Reveal
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        let mut res = world.execute('Reveal'.into(), calldata.span());
+
+        // [Check] Game state
+        let mut games = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Game'.into(), caller.into(), 0, 0);
+        let game = serde::Serde::<Game>::deserialize(ref games)
+            .expect('game deserialization failed');
+        assert(game.score == 3_u64, 'wrong score');
+
+        // [Check] Shield has been lost, but game is not over
+        assert(game.status == true, 'wrong status');
+        assert(game.shield == false, 'wrong shield');
     }
 
     // @dev: This test is not working because of the tile is already explored

@@ -6,7 +6,6 @@ mod Create {
     use box::BoxTrait;
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
-    use explore::components::inventory::Inventory;
     use explore::components::tile::{Tile, TileTrait, level};
     use explore::constants::{LEVEL};
 
@@ -32,8 +31,8 @@ mod Create {
                     y: y,
                     level: LEVEL,
                     size: size,
-                    }, Inventory {
-                    shield: false, kits: n_mines, 
+                    shield: false,
+                    kits: n_mines,
                 }
             )
         );
@@ -115,6 +114,8 @@ mod Test {
         assert(game.y == 3 / 2_u16, 'wrong y');
         assert(game.level == LEVEL, 'wrong level');
         assert(game.size == 3, 'wrong size');
+        assert(game.shield == false, 'wrong shield');
+        assert(game.kits == 1_u16, 'wrong kits');
 
         // [Check] Tile state
         let tile_id: Query = (caller, game.x, game.y).into();

@@ -3,7 +3,6 @@ mod Move {
     use array::ArrayTrait;
     use traits::Into;
     use explore::components::game::{Game, GameTrait, Direction};
-    use explore::components::inventory::Inventory;
     use explore::components::tile::Tile;
 
     fn execute(ctx: Context, direction: Direction) {
@@ -24,7 +23,6 @@ mod Move {
         assert(revealed, 'Current tile must be revealed');
 
         // [Compute] Update game entity
-        let inventory = commands::<Inventory>::entity(ctx.caller_account.into());
         let (x, y) = GameTrait::next_position(game.x, game.y, game.size, direction);
         let time = starknet::get_block_timestamp();
         commands::set_entity(
@@ -40,8 +38,8 @@ mod Move {
                     y: y,
                     level: game.level,
                     size: game.size,
-                    }, Inventory {
-                    shield: inventory.shield, kits: inventory.kits, 
+                    shield: game.shield,
+                    kits: game.kits,
                 }
             )
         );
