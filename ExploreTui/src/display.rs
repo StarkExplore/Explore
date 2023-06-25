@@ -16,7 +16,8 @@ use tui::{
     Frame, Terminal,
 };
 
-const CLUE_NO_MINE: [char; 10] = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
+// const CLUE_NO_MINE: [char; 10] = ['⓪','①','②','③','④','⑤','⑥','⑦','⑧','⑨'];
+const CLUE_NO_MINE: [char; 10] = ['0','1','2','3','4','5','6','7','8','9'];
 const CLUE_MINE: [char; 10] = ['⓿', '❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
 
 #[derive(Default)]
