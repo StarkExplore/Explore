@@ -9,7 +9,6 @@ mod Reveal {
     use starknet::ContractAddress;
 
     use explore::components::game::Game;
-    use explore::components::inventory::Inventory;
     use explore::components::tile::{Tile, TileTrait, level};
     use explore::constants::SECURITY_OFFSET;
 
@@ -19,7 +18,6 @@ mod Reveal {
     fn execute(ctx: Context) {
         // [Check] Game is not over
         let game = commands::<Game>::entity(ctx.caller_account.into());
-        let inventory = commands::<Inventory>::entity(ctx.caller_account.into());
         assert(game.status, 'Game is finished');
 
         // [Check] Two moves in a single block security
@@ -52,12 +50,15 @@ mod Reveal {
                 }
             },
         };
+        tile.x.print();
+        tile.y.print();
         assert(!tile.explored, 'Current tile must be unexplored');
 
         // [Check] Tile is dangerous
+        let mut shield = game.shield;
         if tile.danger {
             // [Check] No shield
-            if !inventory.shield {
+            if !game.shield {
                 // [Compute] Updated game entity, game over
                 commands::set_entity(
                     ctx.caller_account.into(),
@@ -72,24 +73,20 @@ mod Reveal {
                             y: game.y,
                             level: game.level,
                             size: game.size,
-                            }, Inventory {
-                            shield: inventory.shield, kits: inventory.kits, 
+                            shield: game.shield,
+                            kits: game.kits, 
                         }
                     )
                 );
                 return ();
+            // [Check] Shield, then remove the shield
             } else {
-                // [Compute] Remove shield
-                let inventory = Inventory { shield: false, kits: inventory.kits,  };
+                shield = false;
             }
         }
 
         // [Compute] Tile is a shield
-        let mut shield = false;
         if tile.shield {
-            shield = true;
-        };
-        if inventory.shield {
             shield = true;
         };
 
@@ -133,8 +130,8 @@ mod Reveal {
                         y: game.y,
                         level: game.level,
                         size: game.size,
-                        }, Inventory {
-                        shield: shield, kits: inventory.kits + add_kit, 
+                        shield: shield,
+                        kits: game.kits + add_kit,
                     }
                 )
             );
@@ -160,9 +157,8 @@ mod Reveal {
                     y: y,
                     level: level, // level up
                     size: size,
-                    }, Inventory {
-                    shield: shield, // Set to true if Tile is shield
-                     kits: n_mines,
+                    shield: shield,
+                    kits: n_mines,
                 }
             )
         );

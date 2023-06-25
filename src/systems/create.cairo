@@ -6,7 +6,6 @@ mod Create {
     use box::BoxTrait;
     use poseidon::poseidon_hash_span;
     use explore::components::game::Game;
-    use explore::components::inventory::Inventory;
     use explore::components::tile::{Tile, TileTrait, level};
     use explore::constants::{LEVEL};
 
@@ -32,8 +31,8 @@ mod Create {
                     y: y,
                     level: LEVEL,
                     size: size,
-                    }, Inventory {
-                    shield: false, kits: n_mines, 
+                    shield: false,
+                    kits: n_mines,
                 }
             )
         );

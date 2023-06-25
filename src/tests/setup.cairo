@@ -8,7 +8,6 @@ use dojo_core::auth::systems::{Route, RouteTrait, GrantAuthRole};
 
 use explore::components::tile::TileComponent;
 use explore::components::game::GameComponent;
-use explore::components::inventory::InventoryComponent;
 use explore::systems::{create::Create, move::Move, defuse::Defuse, reveal::Reveal};
 
 const NAME: felt252 = 'NAME';
@@ -18,7 +17,6 @@ fn spawn_game() -> ContractAddress {
     let mut components = array::ArrayTrait::new();
     components.append(GameComponent::TEST_CLASS_HASH);
     components.append(TileComponent::TEST_CLASS_HASH);
-    components.append(InventoryComponent::TEST_CLASS_HASH);
 
     // [Setup] Systems
     let mut systems = array::ArrayTrait::new();
@@ -31,16 +29,12 @@ fn spawn_game() -> ContractAddress {
     let mut routes = array::ArrayTrait::new();
     routes.append(RouteTrait::new('Create'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Create'.into(), 'TileWriter'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Create'.into(), 'InventoryWriter'.into(), 'Inventory'.into()));
     routes.append(RouteTrait::new('Move'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Move'.into(), 'TileReader'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Move'.into(), 'InventoryWriter'.into(), 'Inventory'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Reveal'.into(), 'TileWriter'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Reveal'.into(), 'InventoryWriter'.into(), 'Inventory'.into()));
     routes.append(RouteTrait::new('Defuse'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Defuse'.into(), 'TileWriter'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Defuse'.into(), 'InventoryWriter'.into(), 'Inventory'.into()));
 
     let world = spawn_test_world(components, systems, routes);
 
@@ -57,7 +51,6 @@ fn spawn_create_game() -> ContractAddress {
     let mut components = array::ArrayTrait::new();
     components.append(GameComponent::TEST_CLASS_HASH);
     components.append(TileComponent::TEST_CLASS_HASH);
-    components.append(InventoryComponent::TEST_CLASS_HASH);
 
     // [Setup] Systems
     let mut systems = array::ArrayTrait::new();
@@ -67,7 +60,6 @@ fn spawn_create_game() -> ContractAddress {
     let mut routes = array::ArrayTrait::new();
     routes.append(RouteTrait::new('Create'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Create'.into(), 'TileWriter'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Create'.into(), 'InventoryWriter'.into(), 'Inventory'.into()));
 
     let world = spawn_test_world(components, systems, routes);
 
@@ -84,7 +76,6 @@ fn spawn_defuse_game() -> ContractAddress {
     let mut components = array::ArrayTrait::new();
     components.append(GameComponent::TEST_CLASS_HASH);
     components.append(TileComponent::TEST_CLASS_HASH);
-    components.append(InventoryComponent::TEST_CLASS_HASH);
 
     // [Setup] Systems
     let mut systems = array::ArrayTrait::new();
@@ -95,10 +86,8 @@ fn spawn_defuse_game() -> ContractAddress {
     let mut routes = array::ArrayTrait::new();
     routes.append(RouteTrait::new('Create'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Create'.into(), 'TileWriter'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Create'.into(), 'InventoryWriter'.into(), 'Inventory'.into()));
     routes.append(RouteTrait::new('Defuse'.into(), 'GameWriter'.into(), 'Game'.into()));
     routes.append(RouteTrait::new('Defuse'.into(), 'TileWriter'.into(), 'Tile'.into()));
-    routes.append(RouteTrait::new('Defuse'.into(), 'InventoryWriter'.into(), 'Inventory'.into()));
 
     let world = spawn_test_world(components, systems, routes);
 

@@ -3,7 +3,7 @@ use array::{ArrayTrait, SpanTrait};
 use option::OptionTrait;
 use dojo_core::database::query::Query;
 use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
-use explore::components::{game::Game, tile::Tile, inventory::Inventory};
+use explore::components::{game::Game, tile::Tile};
 use explore::systems::{create::Create};
 use explore::tests::setup::spawn_game;
 use debug::PrintTrait;
