@@ -57,23 +57,19 @@ mod Defuse {
             })
         );
 
-        // [Command] Create the defused Tile
-        let clue = TileTrait::get_clue(game.seed, game.level, game.size, x, y);
-        let mine = TileTrait::is_mine(game.seed, game.level, x, y);
-        let shield = TileTrait::is_shield(game.seed, game.level, x, y);
-        let kit = TileTrait::is_kit(game.seed, game.level, x, y);
+        // [Command] Create the defused Tile, with unknown attributes for now
         commands::set_entity(
             (ctx.caller_account, x, y).into(),
             (
                 Tile {
                     explored: false, // Unexplored
-                    mine: mine,
-                    danger: false, // Not dangerous since defused
-                    shield: shield,
-                    kit: kit,
-                    clue: clue,
-                    x: x,
-                    y: y
+                    defused: true,
+                    mine: false,
+                    shield: false,
+                    kit: false,
+                    clue: 0_u8,
+                    x: 0_u16,
+                    y: 0_u16
                 },
             )
         );
@@ -117,8 +113,6 @@ mod Test {
             contract_address: world_address
         }.entity('Game'.into(), caller.into(), 0, 0);
         let final = serde::Serde::<Game>::deserialize(ref finals).expect('deserialization failed');
-
-        // [Check] Move
         assert(final.kits == initial.kits - 1, 'Defuse left failed');
 
         // [Check] Tile state
@@ -129,6 +123,6 @@ mod Test {
         let tile = serde::Serde::<Tile>::deserialize(ref tiles).expect('deserialization failed');
 
         assert(tile.explored == false, 'wrong explored');
-        assert(tile.danger == false, 'wrong danger');
+        assert(tile.defused == true, 'wrong defused');
     }
 }

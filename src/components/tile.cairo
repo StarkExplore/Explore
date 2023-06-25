@@ -8,7 +8,8 @@ use explore::constants::{BASE_SEED, START_SIZE};
 // @notice This is the tile component used to know what is explored
 // and what is not. It also contains the number of dangers around.
 // @param explored Boolean which is true if explored, false otherwise
-// @param danger Boolean which is true if tile has undefused mine, false otherwise
+// @param defused Boolean which is true if defused, false otherwise
+// @param mine Boolean which is true if tile has mine, false otherwise
 // @param shield Boolean which is true if tile has shield, false otherwise
 // @param kit Boolean which is true if tile has kit, false otherwise
 // @param clue The number of initial dangers around
@@ -17,8 +18,8 @@ use explore::constants::{BASE_SEED, START_SIZE};
 #[derive(Component, Copy, Drop, Serde)]
 struct Tile {
     explored: bool,
+    defused: bool,
     mine: bool,
-    danger: bool,
     shield: bool,
     kit: bool,
     clue: u8,
