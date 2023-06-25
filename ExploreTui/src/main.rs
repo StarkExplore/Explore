@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let account = match args.get_account().await {
         Ok(account) => account,
-        Err(e) => {
+        Err(_e) => {
             eprintln!("\n\nError: Could not connect to RPC. Did you start katana already?");
             return Ok(());
         }

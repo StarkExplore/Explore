@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use starknet::core::types::FieldElement;
 
-use crate::components::{Game, Tile, Inventory};
+use crate::components::{Game, Inventory, Tile};
 use crate::movement::Direction;
 
 #[async_trait]

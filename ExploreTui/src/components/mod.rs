@@ -1,7 +1,7 @@
 mod game;
-mod tile;
 mod inventory;
+mod tile;
 
 pub use game::Game;
-pub use tile::Tile;
 pub use inventory::Inventory;
+pub use tile::Tile;

@@ -1,11 +1,10 @@
 use starknet::core::types::FieldElement;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Inventory {
     pub shield: bool,
     pub kits: u16,
 }
-
 
 impl TryFrom<Vec<FieldElement>> for Inventory {
     type Error = anyhow::Error;

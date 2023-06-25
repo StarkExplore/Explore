@@ -9,7 +9,7 @@ use starknet::{
     signers::LocalWallet,
 };
 
-use crate::components::{Game, Tile, Inventory};
+use crate::components::{Game, Inventory, Tile};
 use crate::minesweeper::MinesweeperInterface;
 use crate::movement::Direction;
 

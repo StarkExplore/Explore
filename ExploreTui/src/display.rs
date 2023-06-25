@@ -1,4 +1,4 @@
-use crate::components::{Game, Tile};
+use crate::components::{Game, Inventory, Tile};
 use crate::minesweeper::MinesweeperInterface;
 use crate::movement;
 use anyhow::Result;
@@ -19,6 +19,7 @@ use tui::{
 #[derive(Default)]
 struct App<I> {
     game: Game,
+    inventory: Inventory,
     tiles: Vec<Tile>,
     error_message: String,
     defuse_mode: bool,
@@ -29,6 +30,7 @@ impl<I: MinesweeperInterface> App<I> {
     pub fn new(interface: I) -> Self {
         Self {
             interface,
+            inventory: Inventory::default(),
             game: Game::default(),
             error_message: String::new(),
             defuse_mode: false,
@@ -38,6 +40,7 @@ impl<I: MinesweeperInterface> App<I> {
 
     pub async fn sync(&mut self) -> Result<()> {
         self.game = self.interface.get_game().await?;
+        self.inventory = self.interface.get_inventory().await?;
         self.tiles.clear();
         for j in 0..self.game.size {
             for i in 0..self.game.size {
@@ -210,7 +213,13 @@ fn render_instructions<B: Backend>(f: &mut Frame<B>, canvas: Rect) {
     f.render_widget(instructions, canvas);
 }
 
-fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, defuse_mode: bool) {
+fn render_score<B: Backend>(
+    f: &mut Frame<B>,
+    canvas: Rect,
+    game: &Game,
+    defuse_mode: bool,
+    inventory: &Inventory,
+) {
     let score_text = format!(
         "
     Name: {}
@@ -218,12 +227,17 @@ fn render_score<B: Backend>(f: &mut Frame<B>, canvas: Rect, game: &Game, defuse_
     Level: {}
     Score: {}
 
+    Shield {}
+    Defuses kits Remaining: {}
+
    Move Mode: {}
 ",
         game.name,
         if game.status { "Active" } else { "Game Over" },
         game.level,
         game.score,
+        inventory.shield,
+        inventory.kits,
         if defuse_mode { "Defuse" } else { "Move" }
     );
 
@@ -282,6 +296,6 @@ fn renderer<B: Backend, I>(f: &mut Frame<B>, app: &mut App<I>) {
 
     render_game(f, board_chunk, &app.game, &app.tiles);
     render_instructions(f, instructions_chunk);
-    render_score(f, score_chunk, &app.game, app.defuse_mode);
+    render_score(f, score_chunk, &app.game, app.defuse_mode, &app.inventory);
     render_info(f, error_chunk, &app.error_message);
 }
