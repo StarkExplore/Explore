@@ -7,7 +7,7 @@ cairo-version = "1.1.0"
 sierra-replace-ids = true
 
 [dependencies]
-dojo_core = { git = "https://github.com/dojoengine/dojo", rev = "1e471b4019233b77bde10b4e02bfc167b7904937" }
+dojo_core = { git = "https://github.com/dojoengine/dojo", rev = "4ae03cc7fc67fb32f106fbe21aacdc788901167b" }
 
 [[target.dojo]]
 
@@ -15,4 +15,4 @@ dojo_core = { git = "https://github.com/dojoengine/dojo", rev = "1e471b4019233b7
 rpc_url = "http://localhost:5050/"
 account_address = "0x06f62894bfd81d2e396ce266b2ad0f21e0668d604e5bb1077337b6d570a54aea"
 private_key = "0x07230b49615d175307d580c33d6fda61fc7b9aec91df0f5c1a5ebe3b8cbfee02"
-world_address = "0x1c43a71a736bedc3ce09f8f31ef6e2d3454417a3294590076e4d40daa0b5010"
+world_address = "0x7f1d6c1b15e03673062d8356dc1174d5d85c310479ec49fe781e8bf89e4c4f8"
