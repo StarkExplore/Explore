@@ -45,9 +45,9 @@ mod Create {
             let mut col: u16 = idx % size;
             let mut row: u16 = idx / size;
 
-            // [Error] The command has no effect, then use ctx function
+            // [Error] Delete entity has no effect through command
             let mut tile_sk: Query = (ctx.caller_account, col, row).into();
-            ctx.world.delete_entity(ctx, 'Tile'.into(), tile_sk);
+            ctx.world.delete_entity(ctx, 'Tile'.into(), tile_sk.into());
 
             idx += 1_u16;
         };
@@ -81,16 +81,16 @@ mod Test {
     use option::OptionTrait;
     use dojo_core::database::query::Query;
     use dojo_core::interfaces::{IWorldDispatcher, IWorldDispatcherTrait};
-    use explore::components::{game::Game, tile::{Tile, level}};
+    use explore::components::{game::Game, tile::Tile};
     use explore::systems::{create::Create};
-    use explore::tests::setup::{spawn_create_game, NAME};
+    use explore::tests::setup::{spawn_game, NAME};
     use explore::constants::{LEVEL};
 
     #[test]
     #[available_gas(100000000)]
     fn test_create_game() {
         // [Setup] World
-        let world_address = spawn_create_game();
+        let world_address = spawn_game();
         let caller = starknet::get_caller_address();
 
         // [Check] Number of games
@@ -129,5 +129,36 @@ mod Test {
         assert(tile.shield == false, 'wrong shield');
         assert(tile.kit == false, 'wrong kit');
         assert(tile.clue == 1_u8, 'wrong clue');
+    }
+
+    #[test]
+    #[available_gas(100000000)]
+    fn test_reset_game() {
+        // [Setup] World
+        let world_address = spawn_game();
+        let world = IWorldDispatcher { contract_address: world_address };
+        let caller = starknet::get_caller_address();
+
+        // [Execute] Move to left
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(0);
+        let mut res = world.execute('Move'.into(), calldata.span());
+
+        // [Execute] Create a new game
+        let mut calldata = array::ArrayTrait::<felt252>::new();
+        calldata.append(NAME.into());
+        world.execute('Create'.into(), calldata.span());
+
+        // [Check] Game state
+        let mut games = IWorldDispatcher {
+            contract_address: world_address
+        }.entity('Game'.into(), caller.into(), 0, 0);
+        let game = serde::Serde::<Game>::deserialize(ref games).expect('deserialization failed');
+
+        // [Check] Number of tiles
+        let (tiles, _) = IWorldDispatcher {
+            contract_address: world_address
+        }.entities('Tile'.into(), caller.into());
+        assert(tiles.len() == 1, 'wrong number of tiles');
     }
 }

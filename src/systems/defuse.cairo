@@ -68,7 +68,7 @@ mod Defuse {
                 Tile {
                     explored: false, // Unexplored
                     mine: mine,
-                    danger: false, // Not dangerous
+                    danger: false, // Not dangerous since defused
                     shield: shield,
                     kit: kit,
                     clue: clue,
@@ -90,13 +90,13 @@ mod Test {
     use explore::components::game::{Game, GameTrait};
     use explore::components::tile::{Tile, TileTrait};
     use explore::systems::{create::Create};
-    use explore::tests::setup::spawn_defuse_game;
+    use explore::tests::setup::spawn_game;
 
     #[test]
     #[available_gas(100000000)]
     fn test_defuse_left() {
         // [Setup] World
-        let world_address = spawn_defuse_game();
+        let world_address = spawn_game();
         let world = IWorldDispatcher { contract_address: world_address };
         let caller = starknet::get_caller_address();
 

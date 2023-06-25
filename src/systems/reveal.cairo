@@ -165,9 +165,9 @@ mod Reveal {
             let mut col: u16 = idx % size;
             let mut row: u16 = idx / size;
 
-            // [Error] The command has no effect, then use ctx function
+            // [Error] Delete entity has no effect through command
             let mut tile_sk: Query = (ctx.caller_account, col, row).into();
-            ctx.world.delete_entity(ctx, 'Tile'.into(), tile_sk);
+            ctx.world.delete_entity(ctx, 'Tile'.into(), tile_sk.into());
 
             idx += 1_u16;
         };
